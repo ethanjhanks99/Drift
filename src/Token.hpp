@@ -5,10 +5,11 @@ enum class TokenType {
     /* Single Character Token Types */
     LPAREN, RPAREN, LBRACKET, RBRACKET,
     LBRACE, RBRACE, SEMICOLON, COMMA, DOT,
+    RETURN_POINT,
 
     /* Double and Possible Double */
     ASSIGN, EQUAL, NOT_EQUAL, LESS, LESS_EQUAL,
-    GREAT, GREAT_EQUAL, AND, OR, RETURN_POINT, // ->
+    GREAT, GREAT_EQUAL, AND, OR, NOT, // ->
 
     /* Mathematical and Bit Operators */
     PLUS, MINUS, STAR, SLASH, BIT_AND, BIT_OR,
