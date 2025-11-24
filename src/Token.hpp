@@ -7,16 +7,16 @@ enum class TokenType {
     LBRACE, RBRACE, SEMICOLON, COMMA, DOT,
     RETURN_POINT,
 
-    /* Double and Possible Double */
+    /* Logical Operators */
     ASSIGN, EQUAL, NOT_EQUAL, LESS, LESS_EQUAL,
-    GREAT, GREAT_EQUAL, AND, OR, NOT, // ->
+    GREAT, GREAT_EQUAL, AND, OR, NOT,
 
     /* Mathematical and Bit Operators */
-    PLUS, MINUS, STAR, SLASH, BIT_AND, BIT_OR,
+    PLUS, MINUS, STAR, SLASH, MODULO, BIT_AND, BIT_OR,
     BIT_XOR, BIT_NOT, LBIT_SHIFT, RBIT_SHIFT,
 
     /* Values and User Provided */
-    IDENTIFIER, NUMBER, STR_LIT, CHAR_LIT,
+    IDENTIFIER, INT_LITERAL, FLOAT_LITERAL, STR_LIT, CHAR_LIT,
 
     /* Keywords */
     IF, WHILE, ELSE, FUNC, INT, VOID, STRING, 
@@ -25,7 +25,7 @@ enum class TokenType {
 
     /* Reserved Words */
     CLASS, PLUS_EQUALS, MINUS_EQUALS, MULT_EQUALS, 
-    DIVIDE_EQUALS, POWER, FOR, MODULO, VAR,
+    DIVIDE_EQUALS, POWER, FOR, MODULO, VAR, COLON,
 
     /* Special */
     END_OF_FILE,
