@@ -1,6 +1,7 @@
 #include "Token.hpp"
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 class Lexer {
   public:
@@ -10,6 +11,7 @@ class Lexer {
   private:
     std::string source;
     std::vector<Token> tokens;
+    std::unordered_map<std::string, TokenType> keywords;
     
     int start = 0;
     int current = 0;

@@ -3,6 +3,25 @@
 
 Lexer::Lexer(std::string source) {
     Lexer::source = source;
+
+    keywords["if"] = TokenType::IF;
+    keywords["while"] = TokenType::WHILE;
+    keywords["else"] = TokenType::ELSE;
+    keywords["func"] = TokenType::FUNC;
+    keywords["int"] = TokenType::INT;
+    keywords["void"] = TokenType::VOID;
+    keywords["string"] = TokenType::STRING;
+    keywords["char"] = TokenType::CHAR;
+    keywords["bool"] = TokenType::BOOL;
+    keywords["struct"] = TokenType::STRUCT;
+    keywords["true"] = TokenType::TRUE;
+    keywords["false"] = TokenType::FALSE;
+    keywords["then"] = TokenType::THEN;
+    keywords["do"] = TokenType::DO;
+    keywords["return"] = TokenType::RETURN;
+    keywords["class"] = TokenType::CLASS;
+    keywords["var"] = TokenType::VAR;
+    keywords["for"] = TokenType::FOR;
 }
 
 std::vector<Token> Lexer::scanTokens() {
