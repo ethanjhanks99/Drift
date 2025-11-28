@@ -1,4 +1,5 @@
 #include "Token.hpp"
+#include <string>
 #include <vector>
 
 class Lexer {
@@ -20,6 +21,7 @@ class Lexer {
     char peekNext();
     bool match(char expected);
     void addToken(TokenType type);
+    void addToken(TokenType type, std::string literal);
     void scanToken();
 
     void string();

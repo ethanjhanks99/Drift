@@ -27,7 +27,7 @@ char Lexer::peekNext() {
 }
 
 bool Lexer::match(char expected) {
-    if (Lexer::isAtEnd) return false;
+    if (Lexer::isAtEnd()) return false;
     if (Lexer::source[current] != expected) return false;
 
     current++;
@@ -35,7 +35,12 @@ bool Lexer::match(char expected) {
 }
 
 void Lexer::addToken(TokenType type) {
+    std::string lexeme = Lexer::source.substr(Lexer::start, Lexer::current - Lexer::start);
+    Lexer::tokens.push_back(Token(type, lexeme, Lexer::line, Lexer::start));
+}
 
+void Lexer::addToken(TokenType type, std::string literal) {
+    Lexer::tokens.push_back(Token(type, literal, Lexer::line, Lexer::start));
 }
 
 void Lexer::scanToken() {
@@ -133,6 +138,9 @@ void Lexer::string() {
 }
 
 void Lexer::number() {
+    while (isdigit(peek())) advance();
+
+    Lexer::addToken(TokenType::INT_LITERAL);
     
 }
 

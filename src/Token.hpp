@@ -39,6 +39,8 @@ typedef struct Token
     uint line;
     uint column;
 
+    Token(TokenType t, std::string le, uint l, uint c) : type(t), lexeme(le), line(l), column(c) {}
+
     std::string toString() const {
         return "Token(" + std::to_string((int)type) + ", '" + lexeme + "')";
     }
