@@ -4,28 +4,35 @@
 Lexer::Lexer(std::string source) {
     Lexer::source = source;
 
-    keywords["if"] = TokenType::IF;
-    keywords["while"] = TokenType::WHILE;
-    keywords["else"] = TokenType::ELSE;
-    keywords["func"] = TokenType::FUNC;
-    keywords["int"] = TokenType::INT;
-    keywords["void"] = TokenType::VOID;
-    keywords["string"] = TokenType::STRING;
-    keywords["char"] = TokenType::CHAR;
-    keywords["bool"] = TokenType::BOOL;
-    keywords["struct"] = TokenType::STRUCT;
-    keywords["true"] = TokenType::TRUE;
-    keywords["false"] = TokenType::FALSE;
-    keywords["then"] = TokenType::THEN;
-    keywords["do"] = TokenType::DO;
-    keywords["return"] = TokenType::RETURN;
-    keywords["class"] = TokenType::CLASS;
-    keywords["var"] = TokenType::VAR;
-    keywords["for"] = TokenType::FOR;
+    Lexer::keywords["if"] = TokenType::IF;
+    Lexer::keywords["while"] = TokenType::WHILE;
+    Lexer::keywords["else"] = TokenType::ELSE;
+    Lexer::keywords["func"] = TokenType::FUNC;
+    Lexer::keywords["int"] = TokenType::INT;
+    Lexer::keywords["void"] = TokenType::VOID;
+    Lexer::keywords["string"] = TokenType::STRING;
+    Lexer::keywords["char"] = TokenType::CHAR;
+    Lexer::keywords["bool"] = TokenType::BOOL;
+    Lexer::keywords["struct"] = TokenType::STRUCT;
+    Lexer::keywords["true"] = TokenType::TRUE;
+    Lexer::keywords["false"] = TokenType::FALSE;
+    Lexer::keywords["then"] = TokenType::THEN;
+    Lexer::keywords["do"] = TokenType::DO;
+    Lexer::keywords["return"] = TokenType::RETURN;
+    Lexer::keywords["class"] = TokenType::CLASS;
+    Lexer::keywords["var"] = TokenType::VAR;
+    Lexer::keywords["for"] = TokenType::FOR;
 }
 
 std::vector<Token> Lexer::scanTokens() {
-    
+    while (!isAtEnd()) {
+        Lexer::start = Lexer::current;
+        Lexer::scanToken();
+    }
+
+    Lexer::tokens.push_back(Token(TokenType::END_OF_FILE, "", line, start));
+
+    return Lexer::tokens;
 }
 
 bool Lexer::isAtEnd() {
@@ -153,7 +160,19 @@ void Lexer::scanToken() {
 }
 
 void Lexer::string() {
+    while (peek() != '"' && !isAtEnd()) {
+        if (peek() == '\n') line++;
+        advance();
+    }
 
+    if (isAtEnd()) {
+        addToken(TokenType::ERROR_TOKEN);
+    }
+
+    advance();
+
+    std::string literal = source.substr(start + 1, current - start - 2);
+    Lexer::addToken(TokenType::STR_LIT, literal);
 }
 
 void Lexer::number() {
@@ -164,5 +183,11 @@ void Lexer::number() {
 }
 
 void Lexer::identifier() {
-    
+    while (isalnum(peek()) || peek() == '_') advance();
+    std::string word = Lexer::source.substr(Lexer::start, Lexer::current - Lexer::start);
+    if (Lexer::keywords.find(word) != Lexer::keywords.end()) {
+        Lexer::addToken(Lexer::keywords[word]);
+    } else {
+        Lexer::addToken(TokenType::IDENTIFIER);
+    }
 }

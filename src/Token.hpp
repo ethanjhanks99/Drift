@@ -26,6 +26,7 @@ enum class TokenType {
     /* Reserved Words */
     CLASS, PLUS_EQUALS, MINUS_EQUALS, MULT_EQUALS, 
     DIVIDE_EQUALS, POWER, FOR, MODULO, VAR, COLON,
+    PLUS_PLUS, MINUS_MINUS,
 
     /* Special */
     END_OF_FILE,
