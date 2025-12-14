@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 
 enum class TokenType {
@@ -25,7 +26,7 @@ enum class TokenType {
 
     /* Reserved Words */
     CLASS, PLUS_EQUALS, MINUS_EQUALS, MULT_EQUALS, 
-    DIVIDE_EQUALS, POWER, FOR, MODULO, VAR, COLON,
+    DIVIDE_EQUALS, POWER, FOR, VAR, COLON,
     PLUS_PLUS, MINUS_MINUS,
 
     /* Special */
@@ -33,7 +34,7 @@ enum class TokenType {
     ERROR_TOKEN
 };
 
-typedef struct Token
+struct Token
 {
     TokenType type;
     std::string lexeme;

@@ -49,7 +49,9 @@ char Lexer::peek() {
 }
 
 char Lexer::peekNext() {
-
+    if (Lexer::isAtEnd()) return '\0';
+    if (Lexer::peek() == '\0') return '\0';
+    return Lexer::source[current + 1];
 }
 
 bool Lexer::match(char expected) {

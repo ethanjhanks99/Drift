@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Token.hpp"
 #include <string>
 #include <vector>
