@@ -1,5 +1,4 @@
-#include "../Lexer.hpp"
-#include "../Token.hpp"
+
 #include "test_lexer.hpp"
 
 #include <iostream>

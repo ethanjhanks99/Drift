@@ -1,5 +1,4 @@
 #include "Lexer.hpp"
-#include "Token.hpp"
 
 Lexer::Lexer(std::string m_source) {
     source = m_source;
