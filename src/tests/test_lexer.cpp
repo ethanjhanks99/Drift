@@ -5,13 +5,14 @@
 
 void test_lexing() {
 
-    std::string code = "func main() { var x := 10; print(\"Hello\"); }";
+  std::string code =
+      "func main(ref int my_var) { var x := 10; print(\"Hello\"); }";
 
-    Lexer lexer(code);
+  Lexer lexer(code);
 
-    std::vector<Token> tokens = lexer.scanTokens();
+  std::vector<Token> tokens = lexer.scanTokens();
 
-    for (Token token : tokens) {
-        std::cout << token.toString() << "\n";
-    }
+  for (Token token : tokens) {
+    std::cout << token.toString() << "\n";
+  }
 }
