@@ -23,6 +23,7 @@ Lexer::Lexer(std::string m_source) {
   keywords["var"] = TokenType::VAR;
   keywords["for"] = TokenType::FOR;
   keywords["ref"] = TokenType::REF;
+  keywords["switch"] = TokenType::SWITCH;
 }
 
 std::vector<Token> Lexer::scanTokens() {

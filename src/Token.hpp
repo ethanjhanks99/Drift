@@ -64,6 +64,7 @@ enum class TokenType {
   DO,
   RETURN,
   REF,
+  SWITCH,
 
   /* Reserved Words 52-63 */
   CLASS,
