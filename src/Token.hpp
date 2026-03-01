@@ -62,7 +62,6 @@ enum class TokenType {
   MATCH_ARROW,
   RANGE,
   RANGE_INCLUSIVE,
-  STATIC,
 
   /* Keywords 36-51 */
   IF,

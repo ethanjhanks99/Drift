@@ -112,11 +112,17 @@ void Lexer::scanToken() {
   case '}':
     Lexer::addToken(TokenType::RBRACE);
     break;
+  case ',':
+    Lexer::addToken(TokenType::COMMA);
+    break;
   case ';':
     Lexer::addToken(TokenType::SEMICOLON);
     break;
+  case '?':
+    Lexer::addToken(TokenType::QMARK);
+    break;
   case '.':
-    Lexer::addToken(TokenType::DOT);
+    Lexer::addToken(Lexer::match('.') ? TokenType::DOT : TokenType::RANGE);
     break;
   case '^':
     Lexer::addToken(TokenType::BIT_XOR);
@@ -125,12 +131,16 @@ void Lexer::scanToken() {
     Lexer::addToken(TokenType::BIT_NOT);
     break;
   case ':':
-    Lexer::addToken(Lexer::match('=') ? TokenType::ASSIGN
-                                      : TokenType::ERROR_TOKEN);
+    Lexer::addToken(
+        Lexer::match('=')
+            ? TokenType::ASSIGN
+            : (Lexer::match(':') ? TokenType::COLON_COLON : TokenType::COLON));
     break;
   case '=':
-    Lexer::addToken(Lexer::match('=') ? TokenType::EQUAL
-                                      : TokenType::ERROR_TOKEN);
+    Lexer::addToken(Lexer::match('=')
+                        ? TokenType::EQUAL
+                        : (Lexer::match('>') ? TokenType::MATCH_ARROW
+                                             : TokenType::ERROR_TOKEN));
     break;
   case '<':
     Lexer::addToken(
@@ -153,24 +163,40 @@ void Lexer::scanToken() {
   case '&':
     Lexer::addToken(Lexer::match('&') ? TokenType::AND : TokenType::BIT_AND);
     break;
+  case '%':
+    Lexer::addToken(TokenType::MODULO);
+    break;
   case '-':
-    Lexer::addToken(Lexer::match('>') ? TokenType::RETURN_POINT
-                                      : TokenType::MINUS);
+    Lexer::addToken(Lexer::match('>')
+                        ? TokenType::RETURN_POINT
+                        : (Lexer::match('=')
+                               ? TokenType::MINUS_EQUALS
+                               : (Lexer::match('-') ? TokenType::MINUS_MINUS
+                                                    : TokenType::MINUS)));
     break;
   case '+':
-    Lexer::addToken(TokenType::PLUS);
+    Lexer::addToken(
+        Lexer::match('=')
+            ? TokenType::PLUS_EQUALS
+            : (Lexer::match('+') ? TokenType::PLUS_PLUS : TokenType::PLUS));
     break;
   case '*':
-    Lexer::addToken(TokenType::STAR);
+    Lexer::addToken(Lexer::match('=') ? TokenType::MULT_EQUALS
+                                      : (Lexer::match('*') ? TokenType::POWER
+                                                           : TokenType::STAR));
     break;
   case '/':
     if (Lexer::match('/')) {
       while (Lexer::peek() != '\n' && !Lexer::isAtEnd())
         Lexer::advance();
     } else {
-      Lexer::addToken(TokenType::SLASH);
+      Lexer::addToken(Lexer::match('=') ? TokenType::DIVIDE_EQUALS
+                                        : TokenType::SLASH);
     }
     break;
+
+  case '@':
+    Lexer::handle_attribute();
 
   case ' ':
   case '\t':
@@ -188,6 +214,8 @@ void Lexer::scanToken() {
     break;
   }
 }
+
+void Lexer::handle_attribute() {}
 
 void Lexer::string() {
   while (peek() != '"' && !isAtEnd()) {
