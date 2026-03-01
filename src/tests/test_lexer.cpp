@@ -13,6 +13,17 @@ void test_lexing() {
   std::vector<Token> tokens = lexer.scanTokens();
 
   for (Token token : tokens) {
-    std::cout << token.toString() << "\n";
+    std::cout << token << "\n";
+  }
+
+  std::cout << "\nTesting next set\n";
+
+  code = "owned ref .. ..= . ++ -- += -=, atomic int i /= *=+% _ _**";
+
+  Lexer lexer2(code);
+  tokens = lexer2.scanTokens();
+
+  for (Token token : tokens) {
+    std::cout << token << "\n";
   }
 }

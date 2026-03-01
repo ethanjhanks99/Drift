@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ostream>
 #include <string>
 
 enum class TokenType {
@@ -62,6 +63,7 @@ enum class TokenType {
   MATCH_ARROW,
   RANGE,
   RANGE_INCLUSIVE,
+  STATIC,
 
   /* Keywords 36-51 */
   IF,
@@ -121,4 +123,6 @@ struct Token {
   std::string toString() const {
     return "Token(" + std::to_string((int)type) + ", '" + lexeme + "')";
   }
+
+  friend std::ostream &operator<<(std::ostream &os, const Token &t);
 };

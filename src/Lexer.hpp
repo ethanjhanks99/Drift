@@ -32,4 +32,5 @@ private:
   void string();
   void number();
   void identifier();
+  void handle_range();
 };

@@ -87,129 +87,123 @@ void Lexer::addToken(TokenType type) {
 }
 
 void Lexer::addToken(TokenType type, std::string literal) {
-  Lexer::tokens.push_back(Token(type, literal, line, start));
+  tokens.push_back(Token(type, literal, line, start));
 }
 
 void Lexer::scanToken() {
-  char c = Lexer::advance();
+  char c = advance();
 
   switch (c) {
   case '(':
-    Lexer::addToken(TokenType::LPAREN);
+    addToken(TokenType::LPAREN);
     break;
   case ')':
-    Lexer::addToken(TokenType::RPAREN);
+    addToken(TokenType::RPAREN);
     break;
   case '[':
-    Lexer::addToken(TokenType::LBRACKET);
+    addToken(TokenType::LBRACKET);
     break;
   case ']':
-    Lexer::addToken(TokenType::RBRACKET);
+    addToken(TokenType::RBRACKET);
     break;
   case '{':
-    Lexer::addToken(TokenType::LBRACE);
+    addToken(TokenType::LBRACE);
     break;
   case '}':
-    Lexer::addToken(TokenType::RBRACE);
+    addToken(TokenType::RBRACE);
     break;
   case ',':
-    Lexer::addToken(TokenType::COMMA);
+    addToken(TokenType::COMMA);
     break;
   case ';':
-    Lexer::addToken(TokenType::SEMICOLON);
+    addToken(TokenType::SEMICOLON);
     break;
   case '?':
-    Lexer::addToken(TokenType::QMARK);
+    addToken(TokenType::QMARK);
     break;
   case '.':
-    Lexer::addToken(Lexer::match('.') ? TokenType::DOT : TokenType::RANGE);
+    if (match('.')) {
+      handle_range();
+    } else
+      addToken(TokenType::DOT);
     break;
   case '^':
-    Lexer::addToken(TokenType::BIT_XOR);
+    addToken(TokenType::BIT_XOR);
     break;
   case '~':
-    Lexer::addToken(TokenType::BIT_NOT);
+    addToken(TokenType::BIT_NOT);
     break;
   case ':':
-    Lexer::addToken(
-        Lexer::match('=')
-            ? TokenType::ASSIGN
-            : (Lexer::match(':') ? TokenType::COLON_COLON : TokenType::COLON));
+    addToken(match('=')
+                 ? TokenType::ASSIGN
+                 : (match(':') ? TokenType::COLON_COLON : TokenType::COLON));
     break;
   case '=':
-    Lexer::addToken(Lexer::match('=')
-                        ? TokenType::EQUAL
-                        : (Lexer::match('>') ? TokenType::MATCH_ARROW
-                                             : TokenType::ERROR_TOKEN));
+    addToken(match('=') ? TokenType::EQUAL
+                        : (match('>') ? TokenType::MATCH_ARROW
+                                      : TokenType::ERROR_TOKEN));
     break;
   case '<':
-    Lexer::addToken(
-        Lexer::match('=')
-            ? TokenType::LESS_EQUAL
-            : (Lexer::match('<') ? TokenType::LBIT_SHIFT : TokenType::LESS));
+    addToken(match('=')
+                 ? TokenType::LESS_EQUAL
+                 : (match('<') ? TokenType::LBIT_SHIFT : TokenType::LESS));
     break;
   case '>':
-    Lexer::addToken(
-        Lexer::match('=')
-            ? TokenType::GREAT_EQUAL
-            : (Lexer::match('>') ? TokenType::RBIT_SHIFT : TokenType::GREAT));
+    addToken(match('=')
+                 ? TokenType::GREAT_EQUAL
+                 : (match('>') ? TokenType::RBIT_SHIFT : TokenType::GREAT));
     break;
   case '!':
-    Lexer::addToken(Lexer::match('=') ? TokenType::NOT_EQUAL : TokenType::NOT);
+    addToken(match('=') ? TokenType::NOT_EQUAL : TokenType::NOT);
     break;
   case '|':
-    Lexer::addToken(Lexer::match('|') ? TokenType::OR : TokenType::BIT_OR);
+    addToken(match('|') ? TokenType::OR : TokenType::BIT_OR);
     break;
   case '&':
-    Lexer::addToken(Lexer::match('&') ? TokenType::AND : TokenType::BIT_AND);
+    addToken(match('&') ? TokenType::AND : TokenType::BIT_AND);
     break;
   case '%':
-    Lexer::addToken(TokenType::MODULO);
+    addToken(TokenType::MODULO);
     break;
   case '-':
-    Lexer::addToken(Lexer::match('>')
-                        ? TokenType::RETURN_POINT
-                        : (Lexer::match('=')
-                               ? TokenType::MINUS_EQUALS
-                               : (Lexer::match('-') ? TokenType::MINUS_MINUS
+    addToken(match('>') ? TokenType::RETURN_POINT
+                        : (match('=') ? TokenType::MINUS_EQUALS
+                                      : (match('-') ? TokenType::MINUS_MINUS
                                                     : TokenType::MINUS)));
     break;
   case '+':
-    Lexer::addToken(
-        Lexer::match('=')
-            ? TokenType::PLUS_EQUALS
-            : (Lexer::match('+') ? TokenType::PLUS_PLUS : TokenType::PLUS));
+    addToken(match('=')
+                 ? TokenType::PLUS_EQUALS
+                 : (match('+') ? TokenType::PLUS_PLUS : TokenType::PLUS));
     break;
   case '*':
-    Lexer::addToken(Lexer::match('=') ? TokenType::MULT_EQUALS
-                                      : (Lexer::match('*') ? TokenType::POWER
-                                                           : TokenType::STAR));
+    addToken(match('=') ? TokenType::MULT_EQUALS
+                        : (match('*') ? TokenType::POWER : TokenType::STAR));
     break;
   case '/':
-    if (Lexer::match('/')) {
-      while (Lexer::peek() != '\n' && !Lexer::isAtEnd())
-        Lexer::advance();
+    if (match('/')) {
+      while (peek() != '\n' && !isAtEnd())
+        advance();
     } else {
-      Lexer::addToken(Lexer::match('=') ? TokenType::DIVIDE_EQUALS
-                                        : TokenType::SLASH);
+      addToken(match('=') ? TokenType::DIVIDE_EQUALS : TokenType::SLASH);
     }
     break;
 
   case '@':
-    Lexer::handle_attribute();
+    handle_attribute();
 
   case ' ':
   case '\t':
   case '\r':
     break;
   case '\n':
-    Lexer::line++;
+    line++;
     break;
   default:
     if (isdigit(c)) {
-      Lexer::number();
+      number();
     } else if (isalpha(c) || c == '_') {
-      Lexer::identifier();
+      identifier();
     }
     break;
   }
@@ -231,24 +225,33 @@ void Lexer::string() {
   advance();
 
   std::string literal = source.substr(start + 1, current - start - 2);
-  Lexer::addToken(TokenType::STR_LIT, literal);
+  addToken(TokenType::STR_LIT, literal);
 }
 
 void Lexer::number() {
   while (isdigit(peek()))
     advance();
 
-  Lexer::addToken(TokenType::INT_LITERAL);
+  addToken(TokenType::INT_LITERAL);
 }
 
 void Lexer::identifier() {
   while (isalnum(peek()) || peek() == '_')
     advance();
-  std::string word =
-      Lexer::source.substr(Lexer::start, Lexer::current - Lexer::start);
-  if (Lexer::keywords.find(word) != Lexer::keywords.end()) {
-    Lexer::addToken(Lexer::keywords[word]);
+  std::string word = source.substr(start, current - start);
+  if (keywords.find(word) != keywords.end()) {
+    addToken(keywords[word]);
   } else {
-    Lexer::addToken(TokenType::IDENTIFIER);
+    addToken(TokenType::IDENTIFIER);
   }
+}
+
+void Lexer::handle_range() {
+  if (peek() == '=') {
+    advance();
+    addToken(TokenType::RANGE_INCLUSIVE);
+  } else {
+    addToken(TokenType::RANGE);
+  }
+  advance();
 }
