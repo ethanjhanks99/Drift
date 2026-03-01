@@ -19,11 +19,29 @@ Lexer::Lexer(std::string m_source) {
   keywords["then"] = TokenType::THEN;
   keywords["do"] = TokenType::DO;
   keywords["return"] = TokenType::RETURN;
-  keywords["class"] = TokenType::CLASS;
   keywords["var"] = TokenType::VAR;
   keywords["for"] = TokenType::FOR;
   keywords["ref"] = TokenType::REF;
-  keywords["switch"] = TokenType::SWITCH;
+  keywords["owned"] = TokenType::OWNED;
+  keywords["shared"] = TokenType::SHARED;
+  keywords["const"] = TokenType::CONST;
+  keywords["enum"] = TokenType::ENUM;
+  keywords["trait"] = TokenType::TRAIT;
+  keywords["impl"] = TokenType::IMPL;
+  keywords["match"] = TokenType::MATCH;
+  keywords["loop"] = TokenType::LOOP;
+  keywords["break"] = TokenType::BREAK;
+  keywords["continue"] = TokenType::CONTINUE;
+  keywords["import"] = TokenType::IMPORT;
+  keywords["pub"] = TokenType::PUB;
+  keywords["priv"] = TokenType::PRIV;
+  keywords["unsafe"] = TokenType::UNSAFE;
+  keywords["static"] = TokenType::STATIC;
+  keywords["panic"] = TokenType::PANIC;
+  keywords["channel"] = TokenType::CHANNEL;
+  keywords["atomic"] = TokenType::ATOMIC;
+  keywords["in"] = TokenType::IN;
+  keywords["asm"] = TokenType::ASM;
 }
 
 std::vector<Token> Lexer::scanTokens() {

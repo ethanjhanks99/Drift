@@ -14,6 +14,8 @@ enum class TokenType {
   COMMA,
   DOT,
   RETURN_POINT,
+  COLON,
+  QMARK,
 
   /* Logical Operators 10-19 */
   ASSIGN,
@@ -39,6 +41,13 @@ enum class TokenType {
   BIT_NOT,
   LBIT_SHIFT,
   RBIT_SHIFT,
+  PLUS_EQUALS,
+  MINUS_EQUALS,
+  MULT_EQUALS,
+  DIVIDE_EQUALS,
+  POWER,
+  PLUS_PLUS,
+  MINUS_MINUS,
 
   /* Values and User Provided 31-35 */
   IDENTIFIER,
@@ -46,6 +55,14 @@ enum class TokenType {
   FLOAT_LITERAL,
   STR_LIT,
   CHAR_LIT,
+
+  /* Other shtuff */
+  ATTRIBUTE,
+  COLON_COLON,
+  MATCH_ARROW,
+  RANGE,
+  RANGE_INCLUSIVE,
+  STATIC,
 
   /* Keywords 36-51 */
   IF,
@@ -64,20 +81,29 @@ enum class TokenType {
   DO,
   RETURN,
   REF,
-  SWITCH,
+  OWNED,
+  SHARED,
+  CONST,
+  ENUM,
+  TRAIT,
+  IMPL,
+  MATCH,
+  LOOP,
+  BREAK,
+  CONTINUE,
+  IMPORT,
+  PUB,
+  PRIV,
+  PANIC,
+  UNSAFE,
+  FOR,
+  ATOMIC,
+  CHANNEL,
+  ASM,
+  IN,
 
   /* Reserved Words 52-63 */
-  CLASS,
-  PLUS_EQUALS,
-  MINUS_EQUALS,
-  MULT_EQUALS,
-  DIVIDE_EQUALS,
-  POWER,
-  FOR,
   VAR,
-  COLON,
-  PLUS_PLUS,
-  MINUS_MINUS,
 
   /* Special 64-65 */
   END_OF_FILE,
