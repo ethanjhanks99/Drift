@@ -171,6 +171,48 @@ std::ostream &operator<<(std::ostream &os, const Token &t) {
   case TokenType::INT:
     typeName = "INT";
     break;
+  case TokenType::FLOAT:
+    typeName = "FLOAT";
+    break;
+  case TokenType::I8:
+    typeName = "I8";
+    break;
+  case TokenType::I16:
+    typeName = "I16";
+    break;
+  case TokenType::I32:
+    typeName = "I32";
+    break;
+  case TokenType::I64:
+    typeName = "I64";
+    break;
+  case TokenType::UINT:
+    typeName = "UINT";
+    break;
+  case TokenType::U8:
+    typeName = "U8";
+    break;
+  case TokenType::U16:
+    typeName = "U16";
+    break;
+  case TokenType::U32:
+    typeName = "U32";
+    break;
+  case TokenType::U64:
+    typeName = "U64";
+    break;
+  case TokenType::F8:
+    typeName = "F8";
+    break;
+  case TokenType::F16:
+    typeName = "F16";
+    break;
+  case TokenType::F32:
+    typeName = "F32";
+    break;
+  case TokenType::F64:
+    typeName = "F64";
+    break;
   case TokenType::VOID:
     typeName = "VOID";
     break;

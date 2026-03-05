@@ -3,8 +3,13 @@
 #include <ostream>
 #include <string>
 
+
+/**
+ * Copilot: Organize the token types into categories and assign them specific integer values for better readability and maintainability.
+ */
+
 enum class TokenType {
-  /* Single Character Token Types 0-9 */
+  /* Single Character Token Types */
   LPAREN,
   RPAREN,
   LBRACKET,
@@ -18,7 +23,7 @@ enum class TokenType {
   COLON,
   QMARK,
 
-  /* Logical Operators 10-19 */
+  /* Logical Operators */
   ASSIGN,
   EQUAL,
   NOT_EQUAL,
@@ -30,7 +35,7 @@ enum class TokenType {
   OR,
   NOT,
 
-  /* Mathematical and Bit Operators 20-30 */
+  /* Mathematical and Bit Operators */
   PLUS,
   MINUS,
   STAR,
@@ -50,7 +55,7 @@ enum class TokenType {
   PLUS_PLUS,
   MINUS_MINUS,
 
-  /* Values and User Provided 31-35 */
+  /* Values and User Provided */
   IDENTIFIER,
   INT_LITERAL,
   FLOAT_LITERAL,
@@ -65,27 +70,44 @@ enum class TokenType {
   RANGE_INCLUSIVE,
   STATIC,
 
-  /* Keywords 36-51 */
-  IF,
-  WHILE,
-  ELSE,
-  FUNC,
-  INT,
+  /* Keywords */
+  // types
   VOID,
+  INT,
+  FLOAT,
+  I8,
+  I16,
+  I32,
+  I64,
+  UINT,
+  U8,
+  U16,
+  U32,
+  U64,
+  F8,
+  F16,
+  F32,
+  F64,
+  BOOL,
   STRING,
   CHAR,
-  BOOL,
   STRUCT,
-  TRUE,
-  FALSE,
+  ENUM,
+  ATOMIC,
+  // control flow
+  IF,
+  ELSE,
+  WHILE,
+  FUNC,
   THEN,
   DO,
   RETURN,
+  TRUE,
+  FALSE,
   REF,
   OWNED,
   SHARED,
   CONST,
-  ENUM,
   TRAIT,
   IMPL,
   MATCH,
@@ -98,7 +120,6 @@ enum class TokenType {
   PANIC,
   UNSAFE,
   FOR,
-  ATOMIC,
   CHANNEL,
   ASM,
   IN,
