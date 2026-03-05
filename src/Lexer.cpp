@@ -52,6 +52,8 @@ Lexer::Lexer(std::string m_source) {
   keywords["in"] = TokenType::IN;
   keywords["asm"] = TokenType::ASM;
   keywords["Region"] = TokenType::REGION;
+  keywords["Option"] = TokenType::OPTION;
+  keywords["Result"] = TokenType::RESULT;
 }
 
 std::vector<Token> Lexer::scanTokens() {

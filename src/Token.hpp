@@ -88,6 +88,8 @@ enum class TokenType {
   STRUCT,
   ENUM,
   REGION,
+  OPTION,
+  RESULT,
   // control flow
   IF,
   ELSE,
