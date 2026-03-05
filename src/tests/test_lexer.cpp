@@ -6,7 +6,7 @@
 void test_lexing() {
 
   std::string code =
-      "func main(ref int my_var) { var x := 10; print(\"Hello\"); }";
+      "func main(ref int my_var) { var x := 10; print(\"Hello world\"); }";
 
   Lexer lexer(code);
 

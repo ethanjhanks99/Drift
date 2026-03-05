@@ -201,7 +201,10 @@ void Lexer::scanToken() {
 
   case '@':
     handle_attribute();
-
+    break;
+  case '"':
+    string();
+    break;
   case ' ':
   case '\t':
   case '\r':
