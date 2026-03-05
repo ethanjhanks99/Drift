@@ -49,9 +49,9 @@ Lexer::Lexer(std::string m_source) {
   keywords["static"] = TokenType::STATIC;
   keywords["panic"] = TokenType::PANIC;
   keywords["channel"] = TokenType::CHANNEL;
-  keywords["atomic"] = TokenType::ATOMIC;
   keywords["in"] = TokenType::IN;
   keywords["asm"] = TokenType::ASM;
+  keywords["Region"] = TokenType::REGION;
 }
 
 std::vector<Token> Lexer::scanTokens() {

@@ -276,8 +276,8 @@ std::ostream &operator<<(std::ostream &os, const Token &t) {
   case TokenType::FOR:
     typeName = "FOR";
     break;
-  case TokenType::ATOMIC:
-    typeName = "ATOMIC";
+  case TokenType::REGION:
+    typeName = "REGION";
     break;
   case TokenType::CHANNEL:
     typeName = "CHANNEL";

@@ -3,9 +3,9 @@
 #include <ostream>
 #include <string>
 
-
 /**
- * Copilot: Organize the token types into categories and assign them specific integer values for better readability and maintainability.
+ * Copilot: Organize the token types into categories and assign them specific
+ * integer values for better readability and maintainability.
  */
 
 enum class TokenType {
@@ -87,7 +87,7 @@ enum class TokenType {
   CHAR,
   STRUCT,
   ENUM,
-  ATOMIC,
+  REGION,
   // control flow
   IF,
   ELSE,
