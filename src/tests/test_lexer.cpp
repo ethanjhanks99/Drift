@@ -18,7 +18,7 @@ void test_lexing() {
 
   std::cout << "\nTesting next set\n";
 
-  code = "owned ref .. ..= . ++ -- += -=, atomic int i /= *=+% _ _**";
+  code = "owned @tasks(stack_size := 4096) \"this should be an error";
 
   Lexer lexer2(code);
   tokens = lexer2.scanTokens();

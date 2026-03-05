@@ -200,6 +200,7 @@ void Lexer::scanToken() {
     break;
 
   case '@':
+    advance();
     handle_attribute();
     break;
   case '"':
@@ -222,7 +223,18 @@ void Lexer::scanToken() {
   }
 }
 
-void Lexer::handle_attribute() {}
+void Lexer::handle_attribute() {
+  while (peek() != '\n' && peek() != '(' && peek() != ' ' && !isAtEnd()) {
+    advance();
+  }
+
+  if (isAtEnd()) {
+    addToken(TokenType::ERROR_TOKEN);
+  } else {
+    std::string att_name = source.substr(start + 1, current - start - 1);
+    addToken(TokenType::ATTRIBUTE, att_name);
+  }
+}
 
 void Lexer::string() {
   while (peek() != '"' && !isAtEnd()) {
@@ -233,12 +245,11 @@ void Lexer::string() {
 
   if (isAtEnd()) {
     addToken(TokenType::ERROR_TOKEN);
+  } else {
+    advance();
+    std::string literal = source.substr(start + 1, current - start - 2);
+    addToken(TokenType::STR_LIT, literal);
   }
-
-  advance();
-
-  std::string literal = source.substr(start + 1, current - start - 2);
-  addToken(TokenType::STR_LIT, literal);
 }
 
 void Lexer::number() {
