@@ -301,6 +301,6 @@ std::ostream &operator<<(std::ostream &os, const Token &t) {
     typeName = "UNKNOWN";
     break;
   }
-  os << "Token { type: " << typeName << ", value: " << t.lexeme << " }";
+  os << "<type: " << typeName << ", value: " << t.lexeme << ">";
   return os;
 }
