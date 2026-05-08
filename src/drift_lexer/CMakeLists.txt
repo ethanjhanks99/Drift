@@ -7,4 +7,11 @@ set(SOURCE_FILES
     Lexer.cpp
     Token.cpp)
 
-add_executable(${PROJECT} ${HEADER_FILES} ${SOURCE_FILES} main.cpp)
+add_library(${PROJECT})
+
+target_sources(drift_lexer
+  PRIVATE ${SOURCE_FILES}
+  PUBLIC
+    FILE_SET HEADERS
+    FILES ${HEADER_FILES}
+)

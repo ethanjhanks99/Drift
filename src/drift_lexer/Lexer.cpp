@@ -255,8 +255,21 @@ void Lexer::string() {
 }
 
 void Lexer::number() {
+  bool dec_seen = false;
   while (isdigit(peek()))
     advance();
+
+  if (peek() == '.') {
+    advance();
+    if (!isdigit(peek())) {
+      addToken(TokenType::ERROR_TOKEN);
+      return;
+    }
+    while (isdigit(peek()))
+      advance();
+    addToken(TokenType::FLOAT_LITERAL);
+    return;
+  }
 
   addToken(TokenType::INT_LITERAL);
 }
