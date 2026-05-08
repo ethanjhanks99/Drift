@@ -1,10 +1,33 @@
 cmake_minimum_required(VERSION 3.21)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+Include(FetchContent)
+FetchContent_Declare(
+  Catch2
+  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+  GIT_TAG v3.8.1
+)
+
+FetchContent_MakeAvailable(Catch2)
+
 set(PROJECT driftc)
+
+set(TESTS drift_tests)
 
 project(${PROJECT})
 
 add_executable(${PROJECT} main.cpp)
 
-add_subdirectory(drift_lexer)
+add_executable(${TESTS}
+  tests/lexer/lexer_tests.cpp)
+
+add_subdirectory(lexer)
+
+target_link_libraries(${PROJECT} drift_lexer)
+target_link_libraries(${TESTS}
+  PRIVATE
+    drift_lexer
+    Catch2::Catch2WithMain
+)
 

@@ -56,10 +56,10 @@ Lexer::Lexer(std::string m_source) {
   keywords["Result"] = TokenType::RESULT;
 }
 
-std::vector<Token> Lexer::scanTokens() {
-  while (!isAtEnd()) {
+std::vector<Token> Lexer::scan_tokens() {
+  while (!is_at_end()) {
     start = current;
-    scanToken();
+    scan_token();
   }
 
   tokens.push_back(Token(TokenType::END_OF_FILE, "", line, start));
@@ -67,24 +67,24 @@ std::vector<Token> Lexer::scanTokens() {
   return tokens;
 }
 
-bool Lexer::isAtEnd() { return current >= source.size(); }
+bool Lexer::is_at_end() { return current >= source.size(); }
 
 char Lexer::advance() { return source[current++]; }
 
 char Lexer::peek() {
-  if (isAtEnd())
+  if (is_at_end())
     return '\0';
   return source[current];
 }
 
-char Lexer::peekNext() {
+char Lexer::peek_next() {
   if (current + 1 >= source.size())
     return '\0';
   return source[current + 1];
 }
 
 bool Lexer::match(char expected) {
-  if (isAtEnd())
+  if (is_at_end())
     return false;
   if (source[current] != expected)
     return false;
@@ -93,111 +93,111 @@ bool Lexer::match(char expected) {
   return true;
 }
 
-void Lexer::addToken(TokenType type) {
+void Lexer::add_token(TokenType type) {
   std::string lexeme = source.substr(start, current - start);
   tokens.push_back(Token(type, lexeme, line, start));
 }
 
-void Lexer::addToken(TokenType type, std::string literal) {
+void Lexer::add_token(TokenType type, std::string literal) {
   tokens.push_back(Token(type, literal, line, start));
 }
 
-void Lexer::scanToken() {
+void Lexer::scan_token() {
   char c = advance();
 
   switch (c) {
   case '(':
-    addToken(TokenType::LPAREN);
+    add_token(TokenType::LPAREN);
     break;
   case ')':
-    addToken(TokenType::RPAREN);
+    add_token(TokenType::RPAREN);
     break;
   case '[':
-    addToken(TokenType::LBRACKET);
+    add_token(TokenType::LBRACKET);
     break;
   case ']':
-    addToken(TokenType::RBRACKET);
+    add_token(TokenType::RBRACKET);
     break;
   case '{':
-    addToken(TokenType::LBRACE);
+    add_token(TokenType::LBRACE);
     break;
   case '}':
-    addToken(TokenType::RBRACE);
+    add_token(TokenType::RBRACE);
     break;
   case ',':
-    addToken(TokenType::COMMA);
+    add_token(TokenType::COMMA);
     break;
   case ';':
-    addToken(TokenType::SEMICOLON);
+    add_token(TokenType::SEMICOLON);
     break;
   case '?':
-    addToken(TokenType::QMARK);
+    add_token(TokenType::QMARK);
     break;
   case '.':
     if (match('.')) {
       handle_range();
     } else
-      addToken(TokenType::DOT);
+      add_token(TokenType::DOT);
     break;
   case '^':
-    addToken(TokenType::BIT_XOR);
+    add_token(TokenType::BIT_XOR);
     break;
   case '~':
-    addToken(TokenType::BIT_NOT);
+    add_token(TokenType::BIT_NOT);
     break;
   case ':':
-    addToken(match('=')
-                 ? TokenType::ASSIGN
-                 : (match(':') ? TokenType::COLON_COLON : TokenType::COLON));
+    add_token(match('=')
+                  ? TokenType::ASSIGN
+                  : (match(':') ? TokenType::COLON_COLON : TokenType::COLON));
     break;
   case '=':
-    addToken(match('=') ? TokenType::EQUAL
-                        : (match('>') ? TokenType::MATCH_ARROW
-                                      : TokenType::ERROR_TOKEN));
+    add_token(match('=') ? TokenType::EQUAL
+                         : (match('>') ? TokenType::MATCH_ARROW
+                                       : TokenType::ERROR_TOKEN));
     break;
   case '<':
-    addToken(match('=')
-                 ? TokenType::LESS_EQUAL
-                 : (match('<') ? TokenType::LBIT_SHIFT : TokenType::LESS));
+    add_token(match('=')
+                  ? TokenType::LESS_EQUAL
+                  : (match('<') ? TokenType::LBIT_SHIFT : TokenType::LESS));
     break;
   case '>':
-    addToken(match('=')
-                 ? TokenType::GREAT_EQUAL
-                 : (match('>') ? TokenType::RBIT_SHIFT : TokenType::GREAT));
+    add_token(match('=')
+                  ? TokenType::GREAT_EQUAL
+                  : (match('>') ? TokenType::RBIT_SHIFT : TokenType::GREAT));
     break;
   case '!':
-    addToken(match('=') ? TokenType::NOT_EQUAL : TokenType::NOT);
+    add_token(match('=') ? TokenType::NOT_EQUAL : TokenType::NOT);
     break;
   case '|':
-    addToken(match('|') ? TokenType::OR : TokenType::BIT_OR);
+    add_token(match('|') ? TokenType::OR : TokenType::BIT_OR);
     break;
   case '&':
-    addToken(match('&') ? TokenType::AND : TokenType::BIT_AND);
+    add_token(match('&') ? TokenType::AND : TokenType::BIT_AND);
     break;
   case '%':
-    addToken(TokenType::MODULO);
+    add_token(TokenType::MODULO);
     break;
   case '-':
-    addToken(match('>') ? TokenType::RETURN_POINT
-                        : (match('=') ? TokenType::MINUS_EQUALS
-                                      : (match('-') ? TokenType::MINUS_MINUS
-                                                    : TokenType::MINUS)));
+    add_token(match('>') ? TokenType::RETURN_POINT
+                         : (match('=') ? TokenType::MINUS_EQUALS
+                                       : (match('-') ? TokenType::MINUS_MINUS
+                                                     : TokenType::MINUS)));
     break;
   case '+':
-    addToken(match('=')
-                 ? TokenType::PLUS_EQUALS
-                 : (match('+') ? TokenType::PLUS_PLUS : TokenType::PLUS));
+    add_token(match('=')
+                  ? TokenType::PLUS_EQUALS
+                  : (match('+') ? TokenType::PLUS_PLUS : TokenType::PLUS));
     break;
   case '*':
-    addToken(match('=') ? TokenType::MULT_EQUALS
-                        : (match('*') ? TokenType::POWER : TokenType::STAR));
+    add_token(match('=') ? TokenType::MULT_EQUALS
+                         : (match('*') ? TokenType::POWER : TokenType::STAR));
     break;
   case '/':
     if (match('/')) {
-      while (peek() != '\n' && !isAtEnd())
+      while (peek() != '\n' && !is_at_end())
         advance();
     } else {
-      addToken(match('=') ? TokenType::DIVIDE_EQUALS : TokenType::SLASH);
+      add_token(match('=') ? TokenType::DIVIDE_EQUALS : TokenType::SLASH);
     }
     break;
 
@@ -226,31 +226,31 @@ void Lexer::scanToken() {
 }
 
 void Lexer::handle_attribute() {
-  while (peek() != '\n' && peek() != '(' && peek() != ' ' && !isAtEnd()) {
+  while (peek() != '\n' && peek() != '(' && peek() != ' ' && !is_at_end()) {
     advance();
   }
 
-  if (isAtEnd()) {
-    addToken(TokenType::ERROR_TOKEN);
+  if (is_at_end()) {
+    add_token(TokenType::ERROR_TOKEN);
   } else {
     std::string att_name = source.substr(start + 1, current - start - 1);
-    addToken(TokenType::ATTRIBUTE, att_name);
+    add_token(TokenType::ATTRIBUTE, att_name);
   }
 }
 
 void Lexer::string() {
-  while (peek() != '"' && !isAtEnd()) {
+  while (peek() != '"' && !is_at_end()) {
     if (peek() == '\n')
       line++;
     advance();
   }
 
-  if (isAtEnd()) {
-    addToken(TokenType::ERROR_TOKEN);
+  if (is_at_end()) {
+    add_token(TokenType::ERROR_TOKEN);
   } else {
     advance();
     std::string literal = source.substr(start + 1, current - start - 2);
-    addToken(TokenType::STR_LIT, literal);
+    add_token(TokenType::STR_LIT, literal);
   }
 }
 
@@ -262,16 +262,16 @@ void Lexer::number() {
   if (peek() == '.') {
     advance();
     if (!isdigit(peek())) {
-      addToken(TokenType::ERROR_TOKEN);
+      add_token(TokenType::ERROR_TOKEN);
       return;
     }
     while (isdigit(peek()))
       advance();
-    addToken(TokenType::FLOAT_LITERAL);
+    add_token(TokenType::FLOAT_LITERAL);
     return;
   }
 
-  addToken(TokenType::INT_LITERAL);
+  add_token(TokenType::INT_LITERAL);
 }
 
 void Lexer::identifier() {
@@ -279,18 +279,18 @@ void Lexer::identifier() {
     advance();
   std::string word = source.substr(start, current - start);
   if (keywords.find(word) != keywords.end()) {
-    addToken(keywords[word]);
+    add_token(keywords[word]);
   } else {
-    addToken(TokenType::IDENTIFIER);
+    add_token(TokenType::IDENTIFIER);
   }
 }
 
 void Lexer::handle_range() {
   if (peek() == '=') {
     advance();
-    addToken(TokenType::RANGE_INCLUSIVE);
+    add_token(TokenType::RANGE_INCLUSIVE);
   } else {
-    addToken(TokenType::RANGE);
+    add_token(TokenType::RANGE);
   }
   advance();
 }

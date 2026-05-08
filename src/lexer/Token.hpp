@@ -3,11 +3,6 @@
 #include <ostream>
 #include <string>
 
-/**
- * Copilot: Organize the token types into categories and assign them specific
- * integer values for better readability and maintainability.
- */
-
 enum class TokenType {
   /* Single Character Token Types */
   LPAREN,
