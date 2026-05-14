@@ -2,6 +2,8 @@
 #include "lexer/Token.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
+#include <string>
+#include <unordered_map>
 
 TEST_CASE("Lexer tokenizes integer literals", "[lexer]") {
   Lexer lexer("42");
@@ -251,7 +253,7 @@ TEST_CASE("Lexer tokenizes Mathematical and Bit Operators", "[lexer]") {
     REQUIRE(tokens[0].type == TokenType::POWER);
   }
 
-  SECTION("Module") {
+  SECTION("Modulo") {
     Lexer lexer("%");
     auto tokens = lexer.scan_tokens();
 
@@ -436,5 +438,76 @@ TEST_CASE("Lexer tokenizes types", "[lexer]") {
     auto tokens = lexer.scan_tokens();
 
     REQUIRE(tokens[0].type == TokenType::CHAR);
+  }
+}
+
+TEST_CASE("Lexer tokenizes keywords") {
+  std::unordered_map<std::string, TokenType> keywords;
+
+  keywords["if"] = TokenType::IF;
+  keywords["while"] = TokenType::WHILE;
+  keywords["else"] = TokenType::ELSE;
+  keywords["func"] = TokenType::FUNC;
+  keywords["struct"] = TokenType::STRUCT;
+  keywords["true"] = TokenType::TRUE;
+  keywords["false"] = TokenType::FALSE;
+  keywords["then"] = TokenType::THEN;
+  keywords["do"] = TokenType::DO;
+  keywords["return"] = TokenType::RETURN;
+  keywords["var"] = TokenType::VAR;
+  keywords["for"] = TokenType::FOR;
+  keywords["ref"] = TokenType::REF;
+  keywords["owned"] = TokenType::OWNED;
+  keywords["shared"] = TokenType::SHARED;
+  keywords["const"] = TokenType::CONST;
+  keywords["enum"] = TokenType::ENUM;
+  keywords["trait"] = TokenType::TRAIT;
+  keywords["impl"] = TokenType::IMPL;
+  keywords["match"] = TokenType::MATCH;
+  keywords["loop"] = TokenType::LOOP;
+  keywords["break"] = TokenType::BREAK;
+  keywords["continue"] = TokenType::CONTINUE;
+  keywords["import"] = TokenType::IMPORT;
+  keywords["pub"] = TokenType::PUB;
+  keywords["priv"] = TokenType::PRIV;
+  keywords["unsafe"] = TokenType::UNSAFE;
+  keywords["static"] = TokenType::STATIC;
+  keywords["panic"] = TokenType::PANIC;
+  keywords["channel"] = TokenType::CHANNEL;
+  keywords["in"] = TokenType::IN;
+  keywords["asm"] = TokenType::ASM;
+  keywords["Region"] = TokenType::REGION;
+  keywords["Option"] = TokenType::OPTION;
+  keywords["Result"] = TokenType::RESULT;
+
+  SECTION("keywords") {
+    auto words =
+        GENERATE("if", "while", "else", "func", "struct", "true", "false",
+                 "then", "do", "return", "var", "for", "ref", "owned", "shared",
+                 "const", "enum", "trait", "impl", "match", "loop", "break",
+                 "continue", "import", "pub", "priv", "unsafe", "static",
+                 "panic", "channel", "in", "asm", "Region", "Option", "Result");
+
+    Lexer lexer(words);
+    auto tokens = lexer.scan_tokens();
+
+    REQUIRE(keywords.find(tokens[0].lexeme) != keywords.end());
+  }
+
+  SECTION("Identifiers") {
+    auto vars = GENERATE("num1", "lsia", "_cache_", "_", "plub");
+    Lexer lexer(vars);
+    auto tokens = lexer.scan_tokens();
+
+    REQUIRE(keywords.find(tokens[0].lexeme) == keywords.end());
+    REQUIRE(tokens[0].type == TokenType::IDENTIFIER);
+  }
+
+  SECTION("Invalid") {
+    auto invalid = GENERATE("$", "#", "`", "=", "\"hello world", "1520.-");
+    Lexer lexer(invalid);
+    auto tokens = lexer.scan_tokens();
+
+    REQUIRE(tokens[0].type == TokenType::ERROR_TOKEN);
   }
 }

@@ -220,6 +220,8 @@ void Lexer::scan_token() {
       number();
     } else if (isalpha(c) || c == '_') {
       identifier();
+    } else {
+      add_token(TokenType::ERROR_TOKEN);
     }
     break;
   }
