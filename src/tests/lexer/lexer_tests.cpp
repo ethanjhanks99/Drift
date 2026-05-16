@@ -2,6 +2,7 @@
 #include "lexer/Token.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 
@@ -27,6 +28,24 @@ TEST_CASE("Lexer tokenizes string literals", "[lexer]") {
 
   REQUIRE(tokens[0].type == TokenType::STR_LIT);
   REQUIRE(tokens[0].lexeme == "Hello World");
+}
+
+TEST_CASE("Lexer tokenizes character literals", "[lexer]") {
+  Lexer lexer("'a' '' 'ab'");
+  auto tokens = lexer.scan_tokens();
+  for (auto token : tokens) {
+    std::cout << token << std::endl;
+  }
+
+  REQUIRE(tokens[0].type == TokenType::CHAR);
+  REQUIRE(tokens[0].lexeme == "a");
+  REQUIRE(tokens[1].type == TokenType::CHAR);
+  REQUIRE(tokens[1].lexeme == "");
+  REQUIRE(tokens[2].type == TokenType::ERROR_TOKEN);
+
+  for (auto token : tokens) {
+    std::cout << token << std::endl;
+  }
 }
 
 TEST_CASE("Lexer tokenizes single character tokens", "[lexer]") {

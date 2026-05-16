@@ -45,15 +45,14 @@ Lexer::Lexer(std::string m_source) {
   keywords["import"] = TokenType::IMPORT;
   keywords["pub"] = TokenType::PUB;
   keywords["priv"] = TokenType::PRIV;
-  keywords["unsafe"] = TokenType::UNSAFE;
   keywords["static"] = TokenType::STATIC;
   keywords["panic"] = TokenType::PANIC;
   keywords["channel"] = TokenType::CHANNEL;
   keywords["in"] = TokenType::IN;
   keywords["asm"] = TokenType::ASM;
-  keywords["Region"] = TokenType::REGION;
-  keywords["Option"] = TokenType::OPTION;
-  keywords["Result"] = TokenType::RESULT;
+  // keywords["Region"] = TokenType::REGION;
+  // keywords["Option"] = TokenType::OPTION;
+  // keywords["Result"] = TokenType::RESULT;
 }
 
 std::vector<Token> Lexer::scan_tokens() {
@@ -208,6 +207,9 @@ void Lexer::scan_token() {
   case '"':
     string();
     break;
+  case '\'':
+    character();
+    break;
   case ' ':
   case '\t':
   case '\r':
@@ -228,7 +230,7 @@ void Lexer::scan_token() {
 }
 
 void Lexer::handle_attribute() {
-  while (peek() != '\n' && peek() != '(' && peek() != ' ' && !is_at_end()) {
+  while ((isalpha(peek()) || peek() == '_')) {
     advance();
   }
 
@@ -253,6 +255,28 @@ void Lexer::string() {
     advance();
     std::string literal = source.substr(start + 1, current - start - 2);
     add_token(TokenType::STR_LIT, literal);
+  }
+}
+
+void Lexer::character() {
+  while (peek() != '\'' && !is_at_end()) {
+    if (peek() == '\n') {
+      add_token(TokenType::ERROR_TOKEN);
+      return;
+    }
+    advance();
+  }
+
+  if (is_at_end())
+    add_token(TokenType::ERROR_TOKEN);
+  else {
+    advance();
+    std::string literal = source.substr(start + 1, current - start - 2);
+    if (literal.length() > 1) {
+      add_token(TokenType::ERROR_TOKEN);
+    } else {
+      add_token(TokenType::CHAR, literal);
+    }
   }
 }
 

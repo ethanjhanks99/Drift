@@ -30,6 +30,7 @@ private:
 
   void handle_attribute();
   void string();
+  void character();
   void number();
   void identifier();
   void handle_range();
