@@ -234,12 +234,8 @@ void Lexer::handle_attribute() {
     advance();
   }
 
-  if (is_at_end()) {
-    add_token(TokenType::ERROR_TOKEN);
-  } else {
-    std::string att_name = source.substr(start + 1, current - start - 1);
-    add_token(TokenType::ATTRIBUTE, att_name);
-  }
+  std::string att_name = source.substr(start + 1, current - start - 1);
+  add_token(TokenType::ATTRIBUTE, att_name);
 }
 
 void Lexer::string() {

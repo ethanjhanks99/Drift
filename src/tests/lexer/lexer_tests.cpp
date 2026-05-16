@@ -23,11 +23,15 @@ TEST_CASE("Lexer tokenizes float literals", "[lexer]") {
 }
 
 TEST_CASE("Lexer tokenizes string literals", "[lexer]") {
-  Lexer lexer("\"Hello World\"");
+  Lexer lexer("\"Hello World\" \"Hafo sdfi\"");
   auto tokens = lexer.scan_tokens();
+  for (auto token : tokens) {
+    std::cout << token << std::endl;
+  }
 
   REQUIRE(tokens[0].type == TokenType::STR_LIT);
   REQUIRE(tokens[0].lexeme == "Hello World");
+  REQUIRE(tokens[1].type == TokenType::STR_LIT);
 }
 
 TEST_CASE("Lexer tokenizes character literals", "[lexer]") {
@@ -45,6 +49,29 @@ TEST_CASE("Lexer tokenizes character literals", "[lexer]") {
 
   for (auto token : tokens) {
     std::cout << token << std::endl;
+  }
+}
+
+TEST_CASE("Lexer tokenizes attributes", "[lexer]") {
+  SECTION("One attribute") {
+    Lexer lexer("@unsafe");
+    auto tokens = lexer.scan_tokens();
+
+    REQUIRE(tokens[0].type == TokenType::ATTRIBUTE);
+    REQUIRE(tokens[0].lexeme == "unsafe");
+  }
+
+  SECTION("Two attributes") {
+    Lexer lexer("@unsafe\n@io");
+    auto tokens = lexer.scan_tokens();
+    for (auto token : tokens) {
+      std::cout << token << std::endl;
+    }
+
+    REQUIRE(tokens[0].type == TokenType::ATTRIBUTE);
+    REQUIRE(tokens[0].lexeme == "unsafe");
+    REQUIRE(tokens[1].type == TokenType::ATTRIBUTE);
+    REQUIRE(tokens[1].lexeme == "io");
   }
 }
 
