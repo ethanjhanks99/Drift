@@ -24,11 +24,13 @@ add_executable(${TESTS}
   tests/lexer/lexer_tests.cpp)
 
 add_subdirectory(lexer)
+add_subdirectory(parser)
 
-target_link_libraries(${PROJECT} drift_lexer)
+target_link_libraries(${PROJECT} drift_lexer drift_parser)
 target_link_libraries(${TESTS}
   PRIVATE
     drift_lexer
+    drift_parser
     Catch2::Catch2WithMain
 )
 
