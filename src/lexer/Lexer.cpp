@@ -50,6 +50,7 @@ Lexer::Lexer(std::string m_source) {
   keywords["channel"] = TokenType::CHANNEL;
   keywords["in"] = TokenType::IN;
   keywords["asm"] = TokenType::ASM;
+  keywords["sizeof"] = TokenType::SIZEOF;
   // keywords["Region"] = TokenType::REGION;
   // keywords["Option"] = TokenType::OPTION;
   // keywords["Result"] = TokenType::RESULT;
