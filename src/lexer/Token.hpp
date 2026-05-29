@@ -114,6 +114,7 @@ enum class TokenType {
   CHANNEL,
   ASM,
   IN,
+  SIZEOF,
 
   /* Reserved Words 52-63 */
   VAR,
