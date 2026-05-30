@@ -294,6 +294,21 @@ std::ostream &operator<<(std::ostream &os, const Token &t) {
   case TokenType::IN:
     typeName = "IN";
     break;
+  case TokenType::SIZEOF:
+    typeName = "SIZEOF";
+    break;
+  case TokenType::MOVE:
+    typeName = "MOVE";
+    break;
+  case TokenType::AS:
+    typeName = "AS";
+    break;
+  case TokenType::WHERE:
+    typeName = "WHERE";
+    break;
+  case TokenType::SELF:
+    typeName = "SELF";
+    break;
   case TokenType::VAR:
     typeName = "VAR";
     break;
