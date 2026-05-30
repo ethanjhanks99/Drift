@@ -115,6 +115,10 @@ enum class TokenType {
   ASM,
   IN,
   SIZEOF,
+  MOVE,
+  AS,
+  SELF,
+  WHERE,
 
   /* Reserved Words 52-63 */
   VAR,
