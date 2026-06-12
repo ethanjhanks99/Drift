@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "lexer/Token.hpp"
 
 class ASTNode {
@@ -10,6 +12,6 @@ public:
 
 private:
   Token m_token;
-  ASTNode *m_child;
+  std::vector<ASTNode *> m_child;
   ASTNode *m_parent;
 };
