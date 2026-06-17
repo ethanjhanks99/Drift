@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tools/SourceLocation.hpp"
 #include <ostream>
 #include <string>
 
@@ -131,11 +132,10 @@ enum class TokenType {
 struct Token {
   TokenType type;
   std::string lexeme;
-  uint line;
-  uint column;
+  SourceLocation loc;
 
-  Token(TokenType t, std::string le, uint l, uint c)
-      : type(t), lexeme(le), line(l), column(c) {}
+  Token(TokenType t, std::string le, SourceLocation lo)
+      : type(t), lexeme(le), loc(lo) {}
 
   std::string toString() const {
     return "Token(" + std::to_string((int)type) + ", '" + lexeme + "')";

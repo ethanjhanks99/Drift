@@ -1,5 +1,6 @@
 #include "Lexer.hpp"
 #include "Token.hpp"
+#include "tools/SourceLocation.hpp"
 
 Lexer::Lexer(std::string m_source) {
   source = m_source;
@@ -66,7 +67,8 @@ std::vector<Token> Lexer::scan_tokens() {
     scan_token();
   }
 
-  tokens.push_back(Token(TokenType::END_OF_FILE, "", line, start));
+  tokens.push_back(
+      Token(TokenType::END_OF_FILE, "", SourceLocation(line, current, source)));
 
   return tokens;
 }
@@ -99,11 +101,11 @@ bool Lexer::match(char expected) {
 
 void Lexer::add_token(TokenType type) {
   std::string lexeme = source.substr(start, current - start);
-  tokens.push_back(Token(type, lexeme, line, start));
+  tokens.push_back(Token(type, lexeme, SourceLocation(line, start, source)));
 }
 
 void Lexer::add_token(TokenType type, std::string literal) {
-  tokens.push_back(Token(type, literal, line, start));
+  tokens.push_back(Token(type, literal, SourceLocation(line, start, source)));
 }
 
 void Lexer::scan_token() {
