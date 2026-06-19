@@ -27,17 +27,15 @@ struct FunctionDef : AST {
   std::vector<std::unique_ptr<AST>> attributes;
   // VisMod vis_mod;
   std::string name;
-  bool generic;
   int gen_count;
   std::vector<std::unique_ptr<AST>> param_list;
   std::unique_ptr<AST> function_return;
-  std::unique_ptr<AST> block;
+  std::vector<std::unique_ptr<AST>> block;
 };
 
 struct FunctionDecl : AST {
   // VisMod vis_mod;
   std::string name;
-  bool generic;
   int gen_count;
   std::vector<std::unique_ptr<AST>> param_list;
   std::unique_ptr<AST> function_return;
@@ -58,7 +56,6 @@ struct Param : AST {
 struct StructDef : AST {
   // VisMod vis_mdod;
   std::string name;
-  bool generic;
   int gen_count;
   std::vector<std::unique_ptr<AST>> fields;
 };
@@ -73,7 +70,6 @@ struct StructField : AST {
 
 struct EnumDef : AST {
   std::string name;
-  bool generic;
   int gen_count;
   std::vector<std::unique_ptr<AST>> enum_vals;
 };
@@ -96,4 +92,79 @@ struct TraitDef : AST {
 
 struct ImplDef : AST {
   std::string name;
+  std::string trait;
+  int gen_count;
+  std::vector<std::string> gen_types;
+  std::vector<std::unique_ptr<AST>> impl_block;
+};
+
+struct IfStmt : AST {
+  std::unique_ptr<AST> condition;
+  std::vector<std::unique_ptr<AST>> block;
+};
+
+struct WhileStmt : AST {
+  bool do_while;
+  std::unique_ptr<AST> loop_condition;
+  std::vector<std::unique_ptr<AST>> block;
+};
+
+struct ForStmt : AST {
+  std::unique_ptr<AST> loop_condition;
+  std::vector<std::unique_ptr<AST>> block;
+};
+
+struct LoopStmt : AST {
+  std::vector<std::unique_ptr<AST>> block;
+};
+
+struct MatchStmt : AST {
+  std::unique_ptr<AST> mut;
+  std::vector<std::unique_ptr<AST>> block;
+};
+
+struct MatchOption : AST {
+  std::unique_ptr<AST> comp;
+  std::vector<std::unique_ptr<AST>> block;
+};
+
+struct VariableDecl : AST {
+  // OwnershipMod ownership;
+  std::string name;
+  std::unique_ptr<AST> array_size;
+  // Type type;
+};
+
+struct VariableDef : AST {
+  std::unique_ptr<AST> expression;
+};
+
+struct Return : AST {
+  std::unique_ptr<AST> return_value;
+};
+
+struct Break : AST {
+  std::unique_ptr<AST> break_value;
+};
+
+struct BinaryExpr : AST {
+  // OpType op;
+  std::unique_ptr<AST> left;
+  std::unique_ptr<AST> right;
+};
+
+struct UnaryExpr : AST {
+  // UnaryOp op;
+  std::unique_ptr<AST> operand;
+};
+
+struct Mutable : AST {
+  std::string name;
+  std::unique_ptr<AST> array_access;
+  std::unique_ptr<AST> point_access;
+  // Type type;
+};
+
+struct Immutable : AST {
+  std::unique_ptr<AST> value;
 };
