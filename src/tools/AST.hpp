@@ -28,6 +28,7 @@ struct FunctionDef : AST {
   // VisMod vis_mod;
   std::string name;
   bool generic;
+  int gen_count;
   std::vector<std::unique_ptr<AST>> param_list;
   std::unique_ptr<AST> function_return;
   std::unique_ptr<AST> block;
@@ -37,6 +38,7 @@ struct FunctionDecl : AST {
   // VisMod vis_mod;
   std::string name;
   bool generic;
+  int gen_count;
   std::vector<std::unique_ptr<AST>> param_list;
   std::unique_ptr<AST> function_return;
 };
@@ -57,6 +59,7 @@ struct StructDef : AST {
   // VisMod vis_mdod;
   std::string name;
   bool generic;
+  int gen_count;
   std::vector<std::unique_ptr<AST>> fields;
 };
 
@@ -66,4 +69,31 @@ struct StructField : AST {
   std::string name;
   bool is_array;
   // Type type;
+};
+
+struct EnumDef : AST {
+  std::string name;
+  bool generic;
+  int gen_count;
+  std::vector<std::unique_ptr<AST>> enum_vals;
+};
+
+struct EnumValue : AST {
+  std::string name;
+  std::vector<std::unique_ptr<AST>> fields;
+};
+
+struct EnumField : AST {
+  std::string name;
+  // Type type;
+};
+
+struct TraitDef : AST {
+  std::string name;
+  std::unique_ptr<AST> inherits;
+  std::vector<std::unique_ptr<AST>> contents;
+};
+
+struct ImplDef : AST {
+  std::string name;
 };
