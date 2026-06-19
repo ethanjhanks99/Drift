@@ -23,7 +23,7 @@ struct ImportStatement : AST {
   std::string module;
 };
 
-struct FunctionDef {
+struct FunctionDef : AST {
   std::vector<std::unique_ptr<AST>> attributes;
   // VisMod vis_mod;
   std::string name;
@@ -33,7 +33,7 @@ struct FunctionDef {
   std::unique_ptr<AST> block;
 };
 
-struct FunctionDecl {
+struct FunctionDecl : AST {
   // VisMod vis_mod;
   std::string name;
   bool generic;
@@ -41,26 +41,26 @@ struct FunctionDecl {
   std::unique_ptr<AST> function_return;
 };
 
-struct FunctionReturn {
+struct FunctionReturn : AST {
   // OwnershipMod ownership;
   // Type type;
 };
 
-struct Param {
+struct Param : AST {
   // OwnershipMod ownership;
   std::string name;
   bool is_array;
   // Type type;
 };
 
-struct StructDef {
+struct StructDef : AST {
   // VisMod vis_mdod;
   std::string name;
   bool generic;
   std::vector<std::unique_ptr<AST>> fields;
 };
 
-struct StructField {
+struct StructField : AST {
   // VisMod vis_mod;
   // OwnershipMod ownership;
   std::string name;
