@@ -49,6 +49,21 @@ struct FunctionReturn {
 struct Param {
   // OwnershipMod ownership;
   std::string name;
-  bool is_list;
+  bool is_array;
+  // Type type;
+};
+
+struct StructDef {
+  // VisMod vis_mdod;
+  std::string name;
+  bool generic;
+  std::vector<std::unique_ptr<AST>> fields;
+};
+
+struct StructField {
+  // VisMod vis_mod;
+  // OwnershipMod ownership;
+  std::string name;
+  bool is_array;
   // Type type;
 };
