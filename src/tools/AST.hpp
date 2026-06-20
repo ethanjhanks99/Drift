@@ -168,3 +168,10 @@ struct Mutable : AST {
 struct Immutable : AST {
   std::unique_ptr<AST> value;
 };
+
+struct Call : AST {
+  std::unique_ptr<AST> module_access;
+  std::unique_ptr<AST> impl_access;
+  std::vector<std::unique_ptr<AST>> args;
+  std::string name;
+};
