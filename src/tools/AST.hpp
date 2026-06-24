@@ -1,7 +1,9 @@
 #pragma once
 
+#include "tools/BinaryOp.hpp"
 #include "tools/NodeType.hpp"
 #include "tools/SourceLocation.hpp"
+#include "tools/UnaryOp.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -148,13 +150,13 @@ struct Break : AST {
 };
 
 struct BinaryExpr : AST {
-  // OpType op;
+  BinaryOp op;
   std::unique_ptr<AST> left;
   std::unique_ptr<AST> right;
 };
 
 struct UnaryExpr : AST {
-  // UnaryOp op;
+  UnaryOp op;
   std::unique_ptr<AST> operand;
 };
 
