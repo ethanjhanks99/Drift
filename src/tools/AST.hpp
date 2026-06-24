@@ -2,8 +2,11 @@
 
 #include "tools/BinaryOp.hpp"
 #include "tools/NodeType.hpp"
+#include "tools/OwnershipMod.hpp"
 #include "tools/SourceLocation.hpp"
+#include "tools/Type.hpp"
 #include "tools/UnaryOp.hpp"
+#include "tools/VisMod.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -27,7 +30,7 @@ struct ImportStatement : AST {
 
 struct FunctionDef : AST {
   std::vector<std::unique_ptr<AST>> attributes;
-  // VisMod vis_mod;
+  VisMod vis_mod;
   std::string name;
   int gen_count;
   std::vector<std::unique_ptr<AST>> param_list;
@@ -36,7 +39,7 @@ struct FunctionDef : AST {
 };
 
 struct FunctionDecl : AST {
-  // VisMod vis_mod;
+  VisMod vis_mod;
   std::string name;
   int gen_count;
   std::vector<std::unique_ptr<AST>> param_list;
@@ -44,30 +47,30 @@ struct FunctionDecl : AST {
 };
 
 struct FunctionReturn : AST {
-  // OwnershipMod ownership;
-  // Type type;
+  OwnershipMod ownership;
+  Type type;
 };
 
 struct Param : AST {
-  // OwnershipMod ownership;
+  OwnershipMod ownership;
   std::string name;
   bool is_array;
-  // Type type;
+  Type type;
 };
 
 struct StructDef : AST {
-  // VisMod vis_mdod;
+  VisMod vis_mdod;
   std::string name;
   int gen_count;
   std::vector<std::unique_ptr<AST>> fields;
 };
 
 struct StructField : AST {
-  // VisMod vis_mod;
-  // OwnershipMod ownership;
+  VisMod vis_mod;
+  OwnershipMod ownership;
   std::string name;
   bool is_array;
-  // Type type;
+  Type type;
 };
 
 struct EnumDef : AST {
@@ -83,7 +86,7 @@ struct EnumValue : AST {
 
 struct EnumField : AST {
   std::string name;
-  // Type type;
+  Type type;
 };
 
 struct TraitDef : AST {
@@ -131,10 +134,10 @@ struct MatchOption : AST {
 };
 
 struct VariableDecl : AST {
-  // OwnershipMod ownership;
+  OwnershipMod ownership;
   std::string name;
   std::unique_ptr<AST> array_size;
-  // Type type;
+  Type type;
 };
 
 struct VariableDef : AST {
@@ -164,7 +167,7 @@ struct Mutable : AST {
   std::string name;
   std::unique_ptr<AST> array_access;
   std::unique_ptr<AST> point_access;
-  // Type type;
+  Type type;
 };
 
 struct Immutable : AST {
