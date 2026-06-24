@@ -1,5 +1,7 @@
 #pragma once
 
+#include "lexer/Token.hpp"
+
 enum class Type {
   I8,
   I16,
@@ -14,5 +16,8 @@ enum class Type {
   CHAR,
   BOOL,
   VOID,
-  CUSTOM
+  CUSTOM,
+  ERROR
 };
+
+Type convert(TokenType type);
