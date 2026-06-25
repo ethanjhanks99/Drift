@@ -1,3 +1,7 @@
 #pragma once
 
-enum class UnaryOp { NOT, BNOT, PPLUS, SSUB, NEG, QMARK };
+#include <string>
+
+enum class UnaryOp { NOT, BNOT, PPLUS, SSUB, NEG, QMARK, ERROR };
+
+UnaryOp convert_unary(std::string lexeme);

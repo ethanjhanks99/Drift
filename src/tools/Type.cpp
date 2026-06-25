@@ -1,7 +1,7 @@
 #include "Type.hpp"
 #include "lexer/Token.hpp"
 
-Type convert(TokenType type) {
+Type convert_type(TokenType type) {
   switch (type) {
   case TokenType::I8:
     return Type::I8;

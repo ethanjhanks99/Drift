@@ -20,4 +20,4 @@ enum class Type {
   ERROR
 };
 
-Type convert(TokenType type);
+Type convert_type(TokenType type);

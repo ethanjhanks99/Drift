@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 enum class BinaryOp {
   ADD,
   SUB,
@@ -20,5 +22,7 @@ enum class BinaryOp {
   XOR,
   BAND,
   BOR,
-  BNOT
+  ERROR
 };
+
+BinaryOp convert_binary(std::string lexeme);
