@@ -1,6 +1,20 @@
 set(PROJECT drift_tools)
-set(HEADER_FILES)
-set(SOURCE_FILES)
+set(HEADER_FILES
+  AST.hpp
+  BinaryOp.hpp
+  NodeType.hpp
+  SourceLocation.hpp
+  OwnershipMod.hpp
+  Type.hpp
+  UnaryOp.hpp
+  VisMod.hpp)
+
+set(SOURCE_FILES
+  AST.cpp
+  BinaryOp.cpp
+  SourceLocation.cpp
+  Type.cpp
+  UnaryOp.cpp)
 
 add_library(${PROJECT})
 
