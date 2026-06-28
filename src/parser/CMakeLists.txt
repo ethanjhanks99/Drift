@@ -1,11 +1,9 @@
 set(PROJECT drift_parser)
 set(HEADER_FILES
-    Parser.hpp
-    ASTNode.hpp)
+    Parser.hpp)
 
 set(SOURCE_FILES
-    Parser.cpp
-    ASTNode.cpp)
+    Parser.cpp)
 
 add_library(${PROJECT})
 

@@ -14,10 +14,15 @@
 struct AST {
   NodeType type;
   SourceLocation loc;
+
+  AST(NodeType node_type, SourceLocation location)
+      : type(node_type), loc(location) {}
 };
 
 struct Program : AST {
   std::vector<std::unique_ptr<AST>> top_level_decls;
+
+  Program(SourceLocation loc) : AST(NodeType::PROGRAM, loc) {}
 };
 
 struct Attribute : AST {
