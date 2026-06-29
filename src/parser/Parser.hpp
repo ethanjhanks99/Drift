@@ -19,6 +19,7 @@ private:
   Token advance();
   bool is_at_end();
   Token peek();
+  AST *handle_error();
 
   AST *parse_program();
   AST *parse_top_level_decl();

@@ -25,12 +25,10 @@ struct Program : AST {
   Program(SourceLocation loc) : AST(NodeType::PROGRAM, loc) {}
 };
 
-struct Attribute : AST {
-  std::string name;
-};
-
 struct ImportStatement : AST {
   std::string module;
+
+  ImportStatement(SourceLocation loc) : AST(NodeType::IMPORT_STATE, loc) {}
 };
 
 struct FunctionDef : AST {
@@ -41,6 +39,12 @@ struct FunctionDef : AST {
   std::vector<std::unique_ptr<AST>> param_list;
   std::unique_ptr<AST> function_return;
   std::vector<std::unique_ptr<AST>> block;
+
+  FunctionDef(SourceLocation loc) : AST(NodeType::FUNCTION_DEF, loc) {}
+};
+
+struct Attribute : AST {
+  std::string name;
 };
 
 struct FunctionDecl : AST {
