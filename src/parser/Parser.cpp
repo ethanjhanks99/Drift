@@ -2,28 +2,17 @@
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
 #include "tools/SourceLocation.hpp"
+#include "tools/VisMod.hpp"
 
-bool Parser::consume(Token &token) {
+bool Parser::expect(TokenType type) {
   if (is_at_end())
     return false;
-  if (peek().type != token.type)
-    return false;
-
-  current++;
-  return true;
+  return curr_token.type == type;
 }
 
-bool Parser::expect(Token &token) {
-  if (is_at_end())
-    return false;
-  return peek().type == token.type;
-}
+void Parser::consume() { curr_token = m_token_stream[current++]; }
 
-Token Parser::advance() { return m_token_stream[current++]; }
-
-bool Parser::is_at_end() {
-  return m_token_stream[current].type == TokenType::END_OF_FILE;
-}
+bool Parser::is_at_end() { return peek().type == TokenType::END_OF_FILE; }
 
 Token Parser::peek() { return m_token_stream[current]; }
 
@@ -32,6 +21,7 @@ AST *Parser::parse_program() {
   Program *program = new Program(loc);
 
   while (!is_at_end()) {
+    consume();
     AST *top = parse_top_level_decl();
     program->top_level_decls.emplace_back(top);
   }
@@ -40,7 +30,7 @@ AST *Parser::parse_program() {
 }
 
 AST *Parser::parse_top_level_decl() {
-  switch (peek().type) {
+  switch (curr_token.type) {
   case TokenType::IMPORT:
     return parse_import();
   case TokenType::FUNC:
@@ -67,8 +57,54 @@ AST *Parser::parse_top_level_decl() {
     return parse_variable_definition();
   case TokenType::IDENTIFIER:
     return parse_variable_definition();
+  default:
+    break;
   }
   return handle_error();
 }
 
-AST *Parser::parse_attribute() {}
+AST *Parser::parse_import() {
+  consume();
+
+  if (!expect(TokenType::IDENTIFIER)) {
+    return handle_error();
+  }
+
+  ImportStatement *import = new ImportStatement(curr_token.loc);
+  import->module = curr_token.lexeme;
+  return import;
+}
+
+AST *Parser::parse_function_definition() {
+  FunctionDef *func = new FunctionDef(curr_token.loc);
+
+  while (curr_token.type == TokenType::ATTRIBUTE) {
+    func->attributes.emplace_back(
+        new Attribute(curr_token.loc, curr_token.lexeme));
+    consume();
+  }
+
+  if (is_at_end()) {
+    return handle_error();
+  }
+
+  if (expect(TokenType::PUB)) {
+    func->vis_mod = VisMod::PUB;
+    consume();
+  } else {
+    func->vis_mod = VisMod::PRIV;
+    if (expect(TokenType::PRIV))
+      consume();
+  }
+
+  if (!expect(TokenType::FUNC))
+    return handle_error();
+
+  consume();
+
+  if (!expect(TokenType::IDENTIFIER)) {
+    return handle_error();
+  }
+
+  func->name = curr_token.lexeme;
+}

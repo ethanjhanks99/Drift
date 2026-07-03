@@ -7,23 +7,23 @@
 
 class Parser {
 public:
-  Parser(std::vector<Token> token_stream) : m_token_stream(token_stream) {}
+  Parser(std::vector<Token> token_stream)
+      : m_token_stream(token_stream), curr_token(Token()) {}
   std::unique_ptr<AST> parse();
 
 private:
   std::vector<Token> m_token_stream;
+  Token curr_token;
   int current = 0;
 
-  bool consume(Token &token);
-  bool expect(Token &token);
-  Token advance();
+  void consume();
+  bool expect(TokenType type);
   bool is_at_end();
   Token peek();
   AST *handle_error();
 
   AST *parse_program();
   AST *parse_top_level_decl();
-  AST *parse_attribute();
   AST *parse_import();
   AST *parse_function_definition();
   AST *parse_function_return();

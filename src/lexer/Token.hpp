@@ -134,6 +134,8 @@ struct Token {
   std::string lexeme;
   SourceLocation loc;
 
+  Token() : loc(0, 0, "") {}
+
   Token(TokenType t, std::string le, SourceLocation lo)
       : type(t), lexeme(le), loc(lo) {}
 

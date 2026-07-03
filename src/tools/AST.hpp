@@ -45,6 +45,9 @@ struct FunctionDef : AST {
 
 struct Attribute : AST {
   std::string name;
+
+  Attribute(SourceLocation loc, std::string at_name)
+      : AST(NodeType::ATTRIBUTE, loc), name(at_name) {}
 };
 
 struct FunctionDecl : AST {
