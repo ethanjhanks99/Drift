@@ -3,6 +3,7 @@
 #include "tools/AST.hpp"
 #include "tools/SourceLocation.hpp"
 #include "tools/VisMod.hpp"
+#include <memory>
 
 bool Parser::expect(TokenType type) {
   if (is_at_end())
@@ -111,9 +112,41 @@ AST *Parser::parse_function_definition() {
   if (expect(TokenType::LESS)) {
     consume();
 
+    if (expect(TokenType::GREAT))
+      return handle_error();
+
     while (!expect(TokenType::GREAT)) {
+      if (expect(TokenType::END_OF_FILE))
+        return handle_error();
       func->generics.emplace_back(parse_generic_declaration());
-      consume();
     }
   }
+
+  consume();
+
+  if (!expect(TokenType::LPAREN)) {
+    return handle_error();
+  }
+
+  consume();
+
+  while (!expect(TokenType::RPAREN)) {
+    func->param_list.emplace_back(parse_param());
+  }
+
+  consume();
+
+  func->function_return = std::unique_ptr<AST>(parse_generic_declaration());
+
+  if (!expect(TokenType::LBRACE))
+    return handle_error();
+
+  consume();
+
+  while (!expect(TokenType::RBRACE)) {
+    func->block.emplace_back(parse_block());
+  }
+  consume();
+
+  return func;
 }
