@@ -107,4 +107,13 @@ AST *Parser::parse_function_definition() {
   }
 
   func->name = curr_token.lexeme;
+
+  if (expect(TokenType::LESS)) {
+    consume();
+
+    while (!expect(TokenType::GREAT)) {
+      func->generics.emplace_back(parse_generic_declaration());
+      consume();
+    }
+  }
 }
