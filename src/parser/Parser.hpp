@@ -2,6 +2,7 @@
 
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
+#include <expected>
 #include <memory>
 #include <vector>
 
