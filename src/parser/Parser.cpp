@@ -1,6 +1,7 @@
 #include "Parser.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
+#include "tools/ParseError.hpp"
 #include "tools/SourceLocation.hpp"
 #include "tools/VisMod.hpp"
 #include <memory>
@@ -17,20 +18,20 @@ bool Parser::is_at_end() { return peek().type == TokenType::END_OF_FILE; }
 
 Token Parser::peek() { return m_token_stream[current]; }
 
-AST *Parser::parse_program() {
+std::expected<AST *, ParseError> Parser::parse_program() {
   SourceLocation loc(peek().loc);
   Program *program = new Program(loc);
 
   while (!is_at_end()) {
     consume();
-    AST *top = parse_top_level_decl();
-    program->top_level_decls.emplace_back(top);
+    auto top = parse_top_level_decl();
+    program->top_level_decls.emplace_back(top.value());
   }
 
   return program;
 }
 
-AST *Parser::parse_top_level_decl() {
+std::expected<AST *, ParseError> Parser::parse_top_level_decl() {
   switch (curr_token.type) {
   case TokenType::IMPORT:
     return parse_import();
@@ -64,7 +65,7 @@ AST *Parser::parse_top_level_decl() {
   return handle_error();
 }
 
-AST *Parser::parse_import() {
+std::expected<AST *, ParseError> Parser::parse_import() {
   consume();
 
   if (!expect(TokenType::IDENTIFIER)) {
@@ -76,7 +77,7 @@ AST *Parser::parse_import() {
   return import;
 }
 
-AST *Parser::parse_function_definition() {
+std::expected<AST *, ParseError> Parser::parse_function_definition() {
   FunctionDef *func = new FunctionDef(curr_token.loc);
 
   while (curr_token.type == TokenType::ATTRIBUTE) {
@@ -118,7 +119,8 @@ AST *Parser::parse_function_definition() {
     while (!expect(TokenType::GREAT)) {
       if (expect(TokenType::END_OF_FILE))
         return handle_error();
-      func->generics.emplace_back(parse_generic_declaration());
+      auto gen_dec = parse_generic_declaration();
+      func->generics.emplace_back(gen_dec.value());
     }
   }
 
@@ -131,12 +133,14 @@ AST *Parser::parse_function_definition() {
   consume();
 
   while (!expect(TokenType::RPAREN)) {
-    func->param_list.emplace_back(parse_param());
+    auto param = parse_param();
+    func->param_list.emplace_back(param.value());
   }
 
   consume();
 
-  func->function_return = std::unique_ptr<AST>(parse_generic_declaration());
+  auto ret = parse_function_return();
+  func->function_return = std::unique_ptr<AST>(ret.value());
 
   if (!expect(TokenType::LBRACE))
     return handle_error();
@@ -144,7 +148,8 @@ AST *Parser::parse_function_definition() {
   consume();
 
   while (!expect(TokenType::RBRACE)) {
-    func->block.emplace_back(parse_block());
+    auto block = parse_block();
+    func->block.emplace_back(block.value());
   }
   consume();
 

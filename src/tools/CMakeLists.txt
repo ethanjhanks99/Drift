@@ -7,7 +7,9 @@ set(HEADER_FILES
   OwnershipMod.hpp
   Type.hpp
   UnaryOp.hpp
-  VisMod.hpp)
+  VisMod.hpp
+  ParseError.hpp)
+
 
 set(SOURCE_FILES
   AST.cpp
