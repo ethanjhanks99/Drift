@@ -17,6 +17,7 @@ enum class Type {
   BOOL,
   VOID,
   CUSTOM,
+  FUNC,
   ERROR
 };
 

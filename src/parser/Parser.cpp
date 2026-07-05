@@ -1,9 +1,11 @@
 #include "Parser.hpp"
+#include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
 #include "tools/ParseError.hpp"
 #include "tools/SourceLocation.hpp"
 #include "tools/VisMod.hpp"
+#include <expected>
 #include <memory>
 
 bool Parser::expect(TokenType type) {
@@ -25,7 +27,11 @@ std::expected<AST *, ParseError> Parser::parse_program() {
   while (!is_at_end()) {
     consume();
     auto top = parse_top_level_decl();
-    program->top_level_decls.emplace_back(top.value());
+
+    if (!top)
+      handle_parser_error(top.error(), curr_token);
+
+    program->top_level_decls.emplace_back(*top);
   }
 
   return program;
@@ -68,9 +74,11 @@ std::expected<AST *, ParseError> Parser::parse_top_level_decl() {
 std::expected<AST *, ParseError> Parser::parse_import() {
   consume();
 
-  if (!expect(TokenType::IDENTIFIER)) {
-    return handle_error();
-  }
+  if (expect(TokenType::END_OF_FILE))
+    return std::unexpected(ParseError::UnexpectedEOF);
+
+  if (!expect(TokenType::IDENTIFIER))
+    return std::unexpected(ParseError::UnexpectedToken);
 
   ImportStatement *import = new ImportStatement(curr_token.loc);
   import->module = curr_token.lexeme;
@@ -99,14 +107,16 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
       consume();
   }
 
+  if (expect(TokenType::END_OF_FILE))
+    return std::unexpected(ParseError::UnexpectedEOF);
+
   if (!expect(TokenType::FUNC))
-    return handle_error();
+    return std::unexpected(ParseError::UnexpectedToken);
 
   consume();
 
-  if (!expect(TokenType::IDENTIFIER)) {
-    return handle_error();
-  }
+  if (!expect(TokenType::IDENTIFIER))
+    return std::unexpected(ParseError::UnexpectedToken);
 
   func->name = curr_token.lexeme;
 
@@ -114,11 +124,11 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
     consume();
 
     if (expect(TokenType::GREAT))
-      return handle_error();
+      return std::unexpected(ParseError::UnexpectedToken);
 
     while (!expect(TokenType::GREAT)) {
       if (expect(TokenType::END_OF_FILE))
-        return handle_error();
+        return std::unexpected(ParseError::UnexpectedEOF);
       auto gen_dec = parse_generic_declaration();
       func->generics.emplace_back(gen_dec.value());
     }
@@ -127,7 +137,7 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
   consume();
 
   if (!expect(TokenType::LPAREN)) {
-    return handle_error();
+    return std::unexpected(ParseError::UnexpectedToken);
   }
 
   consume();
@@ -143,7 +153,7 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
   func->function_return = std::unique_ptr<AST>(ret.value());
 
   if (!expect(TokenType::LBRACE))
-    return handle_error();
+    return std::unexpected(ParseError::UnexpectedToken);
 
   consume();
 
