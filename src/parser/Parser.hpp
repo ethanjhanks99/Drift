@@ -45,7 +45,8 @@ private:
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_generic_declaration();
   std::expected<AST *, ParseError> parse_struct_block();
-  std::expected<AST *, ParseError> parse_struct_fields();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_struct_fields();
   std::expected<AST *, ParseError> parse_struct_field();
   std::expected<AST *, ParseError> parse_array_def();
   std::expected<AST *, ParseError> parse_enum_block();

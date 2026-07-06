@@ -7,6 +7,7 @@
 #include "tools/VisMod.hpp"
 #include <expected>
 #include <memory>
+#include <utility>
 
 bool Parser::expect(TokenType type) {
   if (is_at_end())
@@ -18,7 +19,7 @@ void Parser::consume() { curr_token = m_token_stream[current++]; }
 
 bool Parser::is_at_end() { return peek().type == TokenType::END_OF_FILE; }
 
-Token Parser::peek() { return m_token_stream[current + 1]; }
+Token Parser::peek() { return m_token_stream[current]; }
 
 AST *Parser::parse() {
   consume();
@@ -70,6 +71,8 @@ std::expected<AST *, ParseError> Parser::parse_top_level_decl() {
     return parse_variable_definition();
   case TokenType::IDENTIFIER:
     return parse_variable_definition();
+  case TokenType::PRIV:
+  case TokenType::PUB:
   default:
     return std::unexpected(ParseError::UnexpectedToken);
   }
@@ -151,4 +154,36 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
   return func;
 }
 
-std::expected<AST *, ParseError> Parser::parse_struct_definition() {}
+std::expected<AST *, ParseError> Parser::parse_struct_definition() {
+  StructDef *stct = new StructDef(curr_token.loc);
+
+  if (expect(TokenType::PUB)) {
+    stct->vis_mod = VisMod::PUB;
+    consume();
+  } else {
+    stct->vis_mod = VisMod::PRIV;
+    if (expect(TokenType::PRIV))
+      consume();
+  }
+
+  consume(); // struct keyword
+
+  if (expect(TokenType::END_OF_FILE))
+    handle_parser_error(ParseError::UnexpectedEOF, curr_token);
+  if (!expect(TokenType::IDENTIFIER))
+    handle_parser_error(ParseError::UnexpectedToken, curr_token);
+
+  stct->name = curr_token.lexeme;
+
+  auto gen_dec = parse_generic_declaration();
+  if (!gen_dec)
+    handle_parser_error(gen_dec.error(), curr_token);
+  stct->generics = std::move(*gen_dec);
+
+  auto fields = parse_struct_fields();
+  if (!fields)
+    handle_parser_error(fields.error(), curr_token);
+  stct->fields = std::move(*fields);
+
+  return stct;
+}

@@ -53,7 +53,7 @@ struct Attribute : AST {
 struct FunctionDecl : AST {
   VisMod vis_mod;
   std::string name;
-  int gen_count;
+  std::vector<std::unique_ptr<AST>> generics;
   std::vector<std::unique_ptr<AST>> param_list;
   std::unique_ptr<AST> function_return;
 };
@@ -71,10 +71,12 @@ struct Param : AST {
 };
 
 struct StructDef : AST {
-  VisMod vis_mdod;
+  VisMod vis_mod;
   std::string name;
-  int gen_count;
+  std::vector<std::unique_ptr<AST>> generics;
   std::vector<std::unique_ptr<AST>> fields;
+
+  StructDef(SourceLocation loc) : AST(NodeType::STRUCT_DEF, loc) {}
 };
 
 struct StructField : AST {
