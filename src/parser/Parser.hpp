@@ -11,7 +11,7 @@ class Parser {
 public:
   Parser(std::vector<Token> token_stream)
       : m_token_stream(token_stream), curr_token(Token()) {}
-  std::unique_ptr<AST> parse();
+  AST *parse();
 
 private:
   std::vector<Token> m_token_stream;
@@ -36,12 +36,14 @@ private:
   std::expected<AST *, ParseError> parse_impl_definition();
   std::expected<AST *, ParseError> parse_variable_definition();
   std::expected<AST *, ParseError> parse_variable_declaration();
-  std::expected<AST *, ParseError> parse_block();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError> parse_block();
   std::expected<AST *, ParseError> parse_trait_bound();
-  std::expected<AST *, ParseError> parse_param_list();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_param_list();
   std::expected<AST *, ParseError> parse_param();
   std::expected<AST *, ParseError> parse_type();
-  std::expected<AST *, ParseError> parse_generic_declaration();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_generic_declaration();
   std::expected<AST *, ParseError> parse_struct_block();
   std::expected<AST *, ParseError> parse_struct_fields();
   std::expected<AST *, ParseError> parse_struct_field();

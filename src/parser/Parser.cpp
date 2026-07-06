@@ -18,14 +18,19 @@ void Parser::consume() { curr_token = m_token_stream[current++]; }
 
 bool Parser::is_at_end() { return peek().type == TokenType::END_OF_FILE; }
 
-Token Parser::peek() { return m_token_stream[current]; }
+Token Parser::peek() { return m_token_stream[current + 1]; }
+
+AST *Parser::parse() {
+  consume();
+
+  return parse_program().value();
+}
 
 std::expected<AST *, ParseError> Parser::parse_program() {
   SourceLocation loc(peek().loc);
   Program *program = new Program(loc);
 
   while (!is_at_end()) {
-    consume();
     auto top = parse_top_level_decl();
 
     if (!top)
@@ -66,9 +71,8 @@ std::expected<AST *, ParseError> Parser::parse_top_level_decl() {
   case TokenType::IDENTIFIER:
     return parse_variable_definition();
   default:
-    break;
+    return std::unexpected(ParseError::UnexpectedToken);
   }
-  return handle_error();
 }
 
 std::expected<AST *, ParseError> Parser::parse_import() {
@@ -94,9 +98,8 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
     consume();
   }
 
-  if (is_at_end()) {
-    return handle_error();
-  }
+  if (is_at_end())
+    return std::unexpected(ParseError::UnexpectedEOF);
 
   if (expect(TokenType::PUB)) {
     func->vis_mod = VisMod::PUB;
@@ -120,48 +123,32 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
 
   func->name = curr_token.lexeme;
 
-  if (expect(TokenType::LESS)) {
-    consume();
-
-    if (expect(TokenType::GREAT))
-      return std::unexpected(ParseError::UnexpectedToken);
-
-    while (!expect(TokenType::GREAT)) {
-      if (expect(TokenType::END_OF_FILE))
-        return std::unexpected(ParseError::UnexpectedEOF);
-      auto gen_dec = parse_generic_declaration();
-      func->generics.emplace_back(gen_dec.value());
-    }
+  auto gen_dec = parse_generic_declaration();
+  if (!gen_dec) {
+    handle_parser_error(gen_dec.error(), curr_token);
   }
+  func->generics = std::move(*gen_dec);
 
   consume();
 
-  if (!expect(TokenType::LPAREN)) {
-    return std::unexpected(ParseError::UnexpectedToken);
-  }
+  auto param_list = parse_param_list();
 
-  consume();
-
-  while (!expect(TokenType::RPAREN)) {
-    auto param = parse_param();
-    func->param_list.emplace_back(param.value());
-  }
+  if (!param_list)
+    handle_parser_error(param_list.error(), curr_token);
+  func->param_list = std::move(*param_list);
 
   consume();
 
   auto ret = parse_function_return();
   func->function_return = std::unique_ptr<AST>(ret.value());
 
-  if (!expect(TokenType::LBRACE))
-    return std::unexpected(ParseError::UnexpectedToken);
-
-  consume();
-
-  while (!expect(TokenType::RBRACE)) {
-    auto block = parse_block();
-    func->block.emplace_back(block.value());
-  }
+  auto block = parse_block();
+  if (!block)
+    handle_parser_error(block.error(), curr_token);
+  func->block = std::move(*block);
   consume();
 
   return func;
 }
+
+std::expected<AST *, ParseError> Parser::parse_struct_definition() {}
