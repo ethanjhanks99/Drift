@@ -143,6 +143,8 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
   consume();
 
   auto ret = parse_function_return();
+  if (!ret)
+    handle_parser_error(ret.error(), curr_token);
   func->function_return = std::unique_ptr<AST>(ret.value());
 
   auto block = parse_block();
@@ -155,13 +157,13 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
 }
 
 std::expected<AST *, ParseError> Parser::parse_struct_definition() {
-  StructDef *stct = new StructDef(curr_token.loc);
+  StructDef *strct = new StructDef(curr_token.loc);
 
   if (expect(TokenType::PUB)) {
-    stct->vis_mod = VisMod::PUB;
+    strct->vis_mod = VisMod::PUB;
     consume();
   } else {
-    stct->vis_mod = VisMod::PRIV;
+    strct->vis_mod = VisMod::PRIV;
     if (expect(TokenType::PRIV))
       consume();
   }
@@ -173,17 +175,41 @@ std::expected<AST *, ParseError> Parser::parse_struct_definition() {
   if (!expect(TokenType::IDENTIFIER))
     handle_parser_error(ParseError::UnexpectedToken, curr_token);
 
-  stct->name = curr_token.lexeme;
+  strct->name = curr_token.lexeme;
 
   auto gen_dec = parse_generic_declaration();
   if (!gen_dec)
     handle_parser_error(gen_dec.error(), curr_token);
-  stct->generics = std::move(*gen_dec);
+  strct->generics = std::move(*gen_dec);
 
   auto fields = parse_struct_fields();
   if (!fields)
     handle_parser_error(fields.error(), curr_token);
-  stct->fields = std::move(*fields);
+  strct->fields = std::move(*fields);
 
-  return stct;
+  return strct;
+}
+
+std::expected<AST *, ParseError> Parser::parse_enum_definition() {
+  EnumDef *enm = new EnumDef(curr_token.loc);
+
+  consume();
+
+  if (expect(TokenType::END_OF_FILE))
+    return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(TokenType::IDENTIFIER))
+    return std::unexpected(ParseError::UnexpectedToken);
+  enm->name = curr_token.lexeme;
+
+  auto gen_dec = parse_generic_declaration();
+  if (!gen_dec)
+    handle_parser_error(gen_dec.error(), curr_token);
+  enm->generics = std::move(*gen_dec);
+
+  auto enum_values = parse_enum_block();
+  if (!enum_values)
+    handle_parser_error(enum_values.error(), curr_token);
+  enm->enum_vals = std::move(*enum_values);
+
+  return enm;
 }

@@ -49,7 +49,8 @@ private:
   parse_struct_fields();
   std::expected<AST *, ParseError> parse_struct_field();
   std::expected<AST *, ParseError> parse_array_def();
-  std::expected<AST *, ParseError> parse_enum_block();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_enum_block();
   std::expected<AST *, ParseError> parse_enum_value();
   std::expected<AST *, ParseError> parse_field();
   std::expected<AST *, ParseError> parse_module_access();

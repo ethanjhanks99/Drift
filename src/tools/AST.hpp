@@ -89,8 +89,10 @@ struct StructField : AST {
 
 struct EnumDef : AST {
   std::string name;
-  int gen_count;
+  std::vector<std::unique_ptr<AST>> generics;
   std::vector<std::unique_ptr<AST>> enum_vals;
+
+  EnumDef(SourceLocation loc) : AST(NodeType::ENUM_DEF, loc) {}
 };
 
 struct EnumValue : AST {
