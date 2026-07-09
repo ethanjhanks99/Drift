@@ -33,6 +33,7 @@ private:
   std::expected<AST *, ParseError> parse_struct_definition();
   std::expected<AST *, ParseError> parse_enum_definition();
   std::expected<AST *, ParseError> parse_trait_definition();
+  std::expected<AST *, ParseError> parse_inherits();
   std::expected<AST *, ParseError> parse_impl_definition();
   std::expected<AST *, ParseError> parse_variable_definition();
   std::expected<AST *, ParseError> parse_variable_declaration();
@@ -54,7 +55,8 @@ private:
   std::expected<AST *, ParseError> parse_enum_value();
   std::expected<AST *, ParseError> parse_field();
   std::expected<AST *, ParseError> parse_module_access();
-  std::expected<AST *, ParseError> parse_trait_block();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_trait_block();
   std::expected<AST *, ParseError> parse_impl_block();
   std::expected<AST *, ParseError> parse_statement();
   std::expected<AST *, ParseError> parse_if_statement();

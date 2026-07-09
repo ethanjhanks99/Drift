@@ -213,3 +213,31 @@ std::expected<AST *, ParseError> Parser::parse_enum_definition() {
 
   return enm;
 }
+
+std::expected<AST *, ParseError> Parser::parse_trait_definition() {
+  TraitDef *trait = new TraitDef(curr_token.loc);
+  consume();
+
+  if (expect(TokenType::END_OF_FILE))
+    return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(TokenType::IDENTIFIER))
+    return std::unexpected(ParseError::UnexpectedToken);
+
+  trait->name = curr_token.lexeme;
+
+  consume();
+
+  auto inherits = parse_inherits();
+  if (!inherits && *inherits != nullptr)
+    handle_parser_error(inherits.error(), curr_token);
+  else
+    trait->inherits = std::unique_ptr<AST>(*inherits);
+
+  auto body = parse_trait_block();
+  if (!body)
+    handle_parser_error(body.error(), curr_token);
+  else
+    trait->contents = std::move(*body);
+
+  return trait;
+}

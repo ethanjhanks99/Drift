@@ -109,6 +109,8 @@ struct TraitDef : AST {
   std::string name;
   std::unique_ptr<AST> inherits;
   std::vector<std::unique_ptr<AST>> contents;
+
+  TraitDef(SourceLocation loc) : AST(NodeType::TRAIT_DEF, loc) {}
 };
 
 struct ImplDef : AST {
