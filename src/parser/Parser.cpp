@@ -241,3 +241,29 @@ std::expected<AST *, ParseError> Parser::parse_trait_definition() {
 
   return trait;
 }
+
+std::expected<AST *, ParseError> Parser::parse_impl_definition() {
+  ImplDef *impl = new ImplDef(curr_token.loc);
+  consume();
+
+  if (expect(TokenType::END_OF_FILE))
+    return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(TokenType::IDENTIFIER))
+    return std::unexpected(ParseError::UnexpectedToken);
+
+  impl->name = curr_token.lexeme;
+
+  consume();
+
+  auto generics = parse_generic_declaration();
+  if (!generics)
+    handle_parser_error(generics.error(), curr_token);
+  impl->generics = std::move(*generics);
+
+  auto block = parse_impl_block();
+  if (!block)
+    handle_parser_error(block.error(), curr_token);
+  impl->impl_block = std::move(*block);
+
+  return impl;
+}

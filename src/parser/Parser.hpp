@@ -57,7 +57,8 @@ private:
   std::expected<AST *, ParseError> parse_module_access();
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_trait_block();
-  std::expected<AST *, ParseError> parse_impl_block();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_impl_block();
   std::expected<AST *, ParseError> parse_statement();
   std::expected<AST *, ParseError> parse_if_statement();
   std::expected<AST *, ParseError> parse_while_statement();

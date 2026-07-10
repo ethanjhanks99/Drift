@@ -116,9 +116,11 @@ struct TraitDef : AST {
 struct ImplDef : AST {
   std::string name;
   std::string trait;
-  int gen_count;
+  std::vector<std::unique_ptr<AST>> generics;
   std::vector<std::string> gen_types;
   std::vector<std::unique_ptr<AST>> impl_block;
+
+  ImplDef(SourceLocation loc) : AST(NodeType::IMPL_DEF, loc) {}
 };
 
 struct IfStmt : AST {
