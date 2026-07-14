@@ -34,6 +34,7 @@ private:
   std::expected<AST *, ParseError> parse_enum_definition();
   std::expected<AST *, ParseError> parse_trait_definition();
   std::expected<AST *, ParseError> parse_impl_definition();
+  std::expected<AST *, ParseError> parse_global_variable();
   std::expected<AST *, ParseError> parse_variable_definition();
   std::expected<AST *, ParseError> parse_variable_declaration();
   std::expected<AST *, ParseError> parse_trait_bound();

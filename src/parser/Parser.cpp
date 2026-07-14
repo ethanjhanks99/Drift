@@ -5,6 +5,7 @@
 #include "tools/ParseError.hpp"
 #include "tools/SourceLocation.hpp"
 #include "tools/VisMod.hpp"
+#include <cmath>
 #include <expected>
 #include <memory>
 #include <utility>
@@ -267,3 +268,7 @@ std::expected<AST *, ParseError> Parser::parse_impl_definition() {
 
   return impl;
 }
+
+std::expected<AST *, ParseError> Parser::parse_global_variable() {}
+
+std::expected<AST *, ParseError> Parser::parse_variable_declaration() {}
