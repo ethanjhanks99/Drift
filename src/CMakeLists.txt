@@ -33,7 +33,7 @@ target_link_libraries(${PROJECT}
   drift_lexer
   drift_parser
   drift_tools
-  )
+)
 target_link_libraries(${TESTS}
   PRIVATE
     drift_lexer

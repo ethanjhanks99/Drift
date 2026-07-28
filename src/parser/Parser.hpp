@@ -3,6 +3,7 @@
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
 #include "tools/ParseError.hpp"
+#include "tools/VisMod.hpp"
 #include <expected>
 #include <memory>
 #include <vector>
@@ -18,14 +19,17 @@ private:
   Token curr_token;
   int current = 0;
 
-  void consume();
+  Token consume();
   bool expect(TokenType type);
   bool is_at_end();
   Token peek();
+  Token look_ahead();
+  VisMod get_visibility();
   std::expected<AST *, ParseError> handle_error();
 
   std::expected<AST *, ParseError> parse_program();
   std::expected<AST *, ParseError> parse_top_level_decl();
+  std::expected<AST *, ParseError> parse_vismod();
   std::expected<AST *, ParseError> parse_import();
   std::expected<AST *, ParseError> parse_function_definition();
   std::expected<AST *, ParseError> parse_function_return();
@@ -34,7 +38,6 @@ private:
   std::expected<AST *, ParseError> parse_enum_definition();
   std::expected<AST *, ParseError> parse_trait_definition();
   std::expected<AST *, ParseError> parse_impl_definition();
-  std::expected<AST *, ParseError> parse_global_variable();
   std::expected<AST *, ParseError> parse_variable_definition();
   std::expected<AST *, ParseError> parse_variable_declaration();
   std::expected<AST *, ParseError> parse_trait_bound();

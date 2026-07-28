@@ -5,7 +5,6 @@
 #include "tools/ParseError.hpp"
 #include "tools/SourceLocation.hpp"
 #include "tools/VisMod.hpp"
-#include <cmath>
 #include <expected>
 #include <memory>
 #include <utility>
@@ -13,14 +12,27 @@
 bool Parser::expect(TokenType type) {
   if (is_at_end())
     return false;
-  return curr_token.type == type;
+  return peek().type == type;
 }
 
-void Parser::consume() { curr_token = m_token_stream[current++]; }
+Token Parser::consume() { return m_token_stream[current++]; }
 
 bool Parser::is_at_end() { return peek().type == TokenType::END_OF_FILE; }
 
 Token Parser::peek() { return m_token_stream[current]; }
+
+Token Parser::look_ahead() { return m_token_stream[current + 1]; }
+
+VisMod Parser::get_visibility() {
+  if (expect(TokenType::PUB)) {
+    consume();
+    return VisMod::PUB;
+  }
+  if (expect(TokenType::PRIV)) {
+    consume();
+  }
+  return VisMod::PRIV;
+}
 
 AST *Parser::parse() {
   consume();
@@ -45,7 +57,7 @@ std::expected<AST *, ParseError> Parser::parse_program() {
 }
 
 std::expected<AST *, ParseError> Parser::parse_top_level_decl() {
-  switch (curr_token.type) {
+  switch (peek().type) {
   case TokenType::IMPORT:
     return parse_import();
   case TokenType::FUNC:
@@ -74,13 +86,41 @@ std::expected<AST *, ParseError> Parser::parse_top_level_decl() {
     return parse_variable_definition();
   case TokenType::PRIV:
   case TokenType::PUB:
+    return parse_vismod();
+  default:
+    return std::unexpected(ParseError::UnexpectedToken);
+  }
+}
+
+std::expected<AST *, ParseError> Parser::parse_vismod() {
+  switch (look_ahead().type) {
+  case TokenType::FUNC:
+    return parse_function_definition();
+  case TokenType::STRUCT:
+    return parse_struct_definition();
+  case TokenType::ENUM:
+    return parse_enum_definition();
+  case TokenType::TRAIT:
+    return parse_trait_definition();
+  case TokenType::STATIC:
+    return parse_variable_definition();
+  case TokenType::OWNED:
+    return parse_variable_definition();
+  case TokenType::REF:
+    return parse_variable_definition();
+  case TokenType::SHARED:
+    return parse_variable_definition();
+  case TokenType::CONST:
+    return parse_variable_definition();
+  case TokenType::IDENTIFIER:
+    return parse_variable_definition();
   default:
     return std::unexpected(ParseError::UnexpectedToken);
   }
 }
 
 std::expected<AST *, ParseError> Parser::parse_import() {
-  consume();
+  consume(); // skip IMPORT keyword
 
   if (expect(TokenType::END_OF_FILE))
     return std::unexpected(ParseError::UnexpectedEOF);
@@ -88,187 +128,203 @@ std::expected<AST *, ParseError> Parser::parse_import() {
   if (!expect(TokenType::IDENTIFIER))
     return std::unexpected(ParseError::UnexpectedToken);
 
-  ImportStatement *import = new ImportStatement(curr_token.loc);
-  import->module = curr_token.lexeme;
+  Token import_name = consume();
+
+  ImportStatement *import = new ImportStatement(import_name.loc);
+  import->module = import_name.lexeme;
   return import;
 }
 
 std::expected<AST *, ParseError> Parser::parse_function_definition() {
-  FunctionDef *func = new FunctionDef(curr_token.loc);
+  FunctionDef *func = new FunctionDef(peek().loc);
 
-  while (curr_token.type == TokenType::ATTRIBUTE) {
-    func->attributes.emplace_back(
-        new Attribute(curr_token.loc, curr_token.lexeme));
-    consume();
+  while (peek().type == TokenType::ATTRIBUTE) {
+    Token att = consume();
+    func->attributes.emplace_back(new Attribute(att.loc, att.lexeme));
   }
 
   if (is_at_end())
     return std::unexpected(ParseError::UnexpectedEOF);
 
-  if (expect(TokenType::PUB)) {
-    func->vis_mod = VisMod::PUB;
-    consume();
-  } else {
-    func->vis_mod = VisMod::PRIV;
-    if (expect(TokenType::PRIV))
-      consume();
-  }
+  func->vis_mod = get_visibility();
 
   if (expect(TokenType::END_OF_FILE))
     return std::unexpected(ParseError::UnexpectedEOF);
 
   if (!expect(TokenType::FUNC))
     return std::unexpected(ParseError::UnexpectedToken);
-
-  consume();
+  consume(); // skip FUNC keyword
 
   if (!expect(TokenType::IDENTIFIER))
     return std::unexpected(ParseError::UnexpectedToken);
 
-  func->name = curr_token.lexeme;
+  Token name = consume();
+
+  func->name = name.lexeme;
 
   auto gen_dec = parse_generic_declaration();
-  if (!gen_dec) {
-    handle_parser_error(gen_dec.error(), curr_token);
-  }
-  func->generics = std::move(*gen_dec);
+  if (!gen_dec)
+    return std::unexpected(gen_dec.error());
 
-  consume();
+  func->generics = std::move(*gen_dec);
 
   auto param_list = parse_param_list();
 
   if (!param_list)
-    handle_parser_error(param_list.error(), curr_token);
+    return std::unexpected(param_list.error());
   func->param_list = std::move(*param_list);
-
-  consume();
 
   auto ret = parse_function_return();
   if (!ret)
-    handle_parser_error(ret.error(), curr_token);
+    return std::unexpected(ret.error());
+
   func->function_return = std::unique_ptr<AST>(ret.value());
 
   auto block = parse_block();
   if (!block)
-    handle_parser_error(block.error(), curr_token);
+    return std::unexpected(block.error());
   func->block = std::move(*block);
-  consume();
 
   return func;
 }
 
 std::expected<AST *, ParseError> Parser::parse_struct_definition() {
-  StructDef *strct = new StructDef(curr_token.loc);
+  StructDef *strct = new StructDef(peek().loc);
 
-  if (expect(TokenType::PUB)) {
-    strct->vis_mod = VisMod::PUB;
-    consume();
-  } else {
-    strct->vis_mod = VisMod::PRIV;
-    if (expect(TokenType::PRIV))
-      consume();
-  }
-
-  consume(); // struct keyword
+  strct->vis_mod = get_visibility();
 
   if (expect(TokenType::END_OF_FILE))
-    handle_parser_error(ParseError::UnexpectedEOF, curr_token);
-  if (!expect(TokenType::IDENTIFIER))
-    handle_parser_error(ParseError::UnexpectedToken, curr_token);
+    return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(TokenType::STRUCT))
+    return std::unexpected(ParseError::UnexpectedToken);
+  consume(); // skip STRUCT keyword
 
-  strct->name = curr_token.lexeme;
+  if (!expect(TokenType::IDENTIFIER))
+    return std::unexpected(ParseError::UnexpectedToken);
+
+  Token name = consume();
+
+  strct->name = name.lexeme;
 
   auto gen_dec = parse_generic_declaration();
   if (!gen_dec)
-    handle_parser_error(gen_dec.error(), curr_token);
+    return std::unexpected(gen_dec.error());
   strct->generics = std::move(*gen_dec);
 
   auto fields = parse_struct_fields();
   if (!fields)
-    handle_parser_error(fields.error(), curr_token);
+    return std::unexpected(fields.error());
   strct->fields = std::move(*fields);
 
   return strct;
 }
 
 std::expected<AST *, ParseError> Parser::parse_enum_definition() {
-  EnumDef *enm = new EnumDef(curr_token.loc);
+  EnumDef *enm = new EnumDef(peek().loc);
 
-  consume();
+  enm->vis_mod = get_visibility();
 
   if (expect(TokenType::END_OF_FILE))
     return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(TokenType::ENUM))
+    return std::unexpected(ParseError::UnexpectedToken);
+  consume(); // skip ENUM keyword
+
   if (!expect(TokenType::IDENTIFIER))
     return std::unexpected(ParseError::UnexpectedToken);
-  enm->name = curr_token.lexeme;
+
+  Token name = consume();
+  enm->name = name.lexeme;
 
   auto gen_dec = parse_generic_declaration();
   if (!gen_dec)
-    handle_parser_error(gen_dec.error(), curr_token);
+    return std::unexpected(gen_dec.error());
   enm->generics = std::move(*gen_dec);
 
   auto enum_values = parse_enum_block();
   if (!enum_values)
-    handle_parser_error(enum_values.error(), curr_token);
+    return std::unexpected(enum_values.error());
   enm->enum_vals = std::move(*enum_values);
 
   return enm;
 }
 
 std::expected<AST *, ParseError> Parser::parse_trait_definition() {
-  TraitDef *trait = new TraitDef(curr_token.loc);
-  consume();
+  TraitDef *trait = new TraitDef(peek().loc);
+
+  trait->vis_mod = get_visibility();
 
   if (expect(TokenType::END_OF_FILE))
     return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(TokenType::TRAIT))
+    return std::unexpected(ParseError::UnexpectedToken);
+  consume(); // skip TRAIT keyword
+
   if (!expect(TokenType::IDENTIFIER))
     return std::unexpected(ParseError::UnexpectedToken);
 
-  trait->name = curr_token.lexeme;
-
-  consume();
+  Token name = consume();
+  trait->name = name.lexeme;
 
   auto inherits = parse_inherits();
   if (!inherits && *inherits != nullptr)
-    handle_parser_error(inherits.error(), curr_token);
+    return std::unexpected(inherits.error());
   else
     trait->inherits = std::unique_ptr<AST>(*inherits);
 
   auto body = parse_trait_block();
   if (!body)
-    handle_parser_error(body.error(), curr_token);
-  else
-    trait->contents = std::move(*body);
+    return std::unexpected(body.error());
+  trait->contents = std::move(*body);
 
   return trait;
 }
 
 std::expected<AST *, ParseError> Parser::parse_impl_definition() {
-  ImplDef *impl = new ImplDef(curr_token.loc);
-  consume();
+  ImplDef *impl = new ImplDef(peek().loc);
+
+  impl->vis_mod = get_visibility();
 
   if (expect(TokenType::END_OF_FILE))
     return std::unexpected(ParseError::UnexpectedEOF);
+  if (expect(TokenType::IMPL))
+    return std::unexpected(ParseError::UnexpectedToken);
+  consume(); // skip IMPL keyword
+
   if (!expect(TokenType::IDENTIFIER))
     return std::unexpected(ParseError::UnexpectedToken);
 
-  impl->name = curr_token.lexeme;
+  Token name = consume();
 
-  consume();
+  impl->name = name.lexeme;
 
   auto generics = parse_generic_declaration();
   if (!generics)
-    handle_parser_error(generics.error(), curr_token);
+    return std::unexpected(generics.error());
   impl->generics = std::move(*generics);
 
   auto block = parse_impl_block();
   if (!block)
-    handle_parser_error(block.error(), curr_token);
+    return std::unexpected(block.error());
   impl->impl_block = std::move(*block);
 
   return impl;
 }
 
-std::expected<AST *, ParseError> Parser::parse_global_variable() {}
+std::expected<AST *, ParseError> Parser::parse_variable_definition() {
+  VariableDef *def = new VariableDef(peek().loc);
+
+  auto decl = parse_variable_declaration();
+  if (!decl)
+    return std::unexpected(decl.error());
+  def->decl = std::unique_ptr<AST>(*decl);
+
+  auto expression = parse_expression();
+  if (!expression)
+    return std::unexpected(expression.error());
+  def->expression = std::unique_ptr<AST>(*expression);
+
+  return def;
+}
 
 std::expected<AST *, ParseError> Parser::parse_variable_declaration() {}

@@ -88,6 +88,7 @@ struct StructField : AST {
 };
 
 struct EnumDef : AST {
+  VisMod vis_mod;
   std::string name;
   std::vector<std::unique_ptr<AST>> generics;
   std::vector<std::unique_ptr<AST>> enum_vals;
@@ -106,6 +107,7 @@ struct EnumField : AST {
 };
 
 struct TraitDef : AST {
+  VisMod vis_mod;
   std::string name;
   std::unique_ptr<AST> inherits;
   std::vector<std::unique_ptr<AST>> contents;
@@ -114,6 +116,7 @@ struct TraitDef : AST {
 };
 
 struct ImplDef : AST {
+  VisMod vis_mod;
   std::string name;
   std::string trait;
   std::vector<std::unique_ptr<AST>> generics;
@@ -126,42 +129,60 @@ struct ImplDef : AST {
 struct IfStmt : AST {
   std::unique_ptr<AST> condition;
   std::vector<std::unique_ptr<AST>> block;
+
+  IfStmt(SourceLocation loc) : AST(NodeType::IF_STATE, loc) {}
 };
 
 struct WhileStmt : AST {
   bool do_while;
   std::unique_ptr<AST> loop_condition;
   std::vector<std::unique_ptr<AST>> block;
+
+  WhileStmt(SourceLocation loc) : AST(NodeType::WHILE_STATE, loc) {}
 };
 
 struct ForStmt : AST {
   std::unique_ptr<AST> loop_condition;
   std::vector<std::unique_ptr<AST>> block;
+
+  ForStmt(SourceLocation loc) : AST(NodeType::FOR_STATE, loc) {}
 };
 
 struct LoopStmt : AST {
   std::vector<std::unique_ptr<AST>> block;
+
+  LoopStmt(SourceLocation loc) : AST(NodeType::LOOP_STATE, loc) {}
 };
 
 struct MatchStmt : AST {
   std::unique_ptr<AST> mut;
   std::vector<std::unique_ptr<AST>> block;
+
+  MatchStmt(SourceLocation loc) : AST(NodeType::MATCH_STATE, loc) {}
 };
 
 struct MatchOption : AST {
   std::unique_ptr<AST> comp;
   std::vector<std::unique_ptr<AST>> block;
+
+  MatchOption(SourceLocation loc) : AST(NodeType::MATCH_OPTIONS, loc) {}
 };
 
 struct VariableDecl : AST {
+  VisMod vis_mod;
   OwnershipMod ownership;
   std::string name;
   std::unique_ptr<AST> array_size;
   Type type;
+
+  VariableDecl(SourceLocation loc) : AST(NodeType::VARIABLE_DECL, loc) {}
 };
 
 struct VariableDef : AST {
+  std::unique_ptr<AST> decl;
   std::unique_ptr<AST> expression;
+
+  VariableDef(SourceLocation loc) : AST(NodeType::VARIABLE_DEF, loc) {}
 };
 
 struct Return : AST {
