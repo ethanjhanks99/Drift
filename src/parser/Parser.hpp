@@ -2,6 +2,7 @@
 
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
+#include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
 #include "tools/VisMod.hpp"
 #include <expected>
@@ -25,6 +26,7 @@ private:
   Token peek();
   Token look_ahead();
   VisMod get_visibility();
+  OwnershipMod get_ownership();
   std::expected<AST *, ParseError> handle_error();
 
   std::expected<AST *, ParseError> parse_program();

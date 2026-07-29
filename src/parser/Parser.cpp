@@ -2,8 +2,10 @@
 #include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
+#include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
 #include "tools/SourceLocation.hpp"
+#include "tools/Type.hpp"
 #include "tools/VisMod.hpp"
 #include <expected>
 #include <memory>
@@ -32,6 +34,22 @@ VisMod Parser::get_visibility() {
     consume();
   }
   return VisMod::PRIV;
+}
+
+OwnershipMod Parser::get_ownership() {
+  if (expect(TokenType::REF)) {
+    consume();
+    return OwnershipMod::REF;
+  } else if (expect(TokenType::CONST)) {
+    consume();
+    return OwnershipMod::CONST;
+  } else if (expect(TokenType::SHARED)) {
+    consume();
+    return OwnershipMod::SHARED;
+  } else if (expect(TokenType::OWNED)) {
+    consume();
+  }
+  return OwnershipMod::OWNED;
 }
 
 AST *Parser::parse() {
@@ -327,4 +345,33 @@ std::expected<AST *, ParseError> Parser::parse_variable_definition() {
   return def;
 }
 
-std::expected<AST *, ParseError> Parser::parse_variable_declaration() {}
+std::expected<AST *, ParseError> Parser::parse_variable_declaration() {
+  VariableDecl *decl = new VariableDecl(peek().loc);
+
+  decl->vis_mod = get_visibility();
+
+  decl->ownership = get_ownership();
+
+  if (is_at_end())
+    return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(TokenType::IDENTIFIER))
+    return std::unexpected(ParseError::UnexpectedToken);
+  Token name = consume();
+  decl->name = name.lexeme;
+
+  auto array_decl = parse_array_def();
+  if (!array_decl)
+    return std::unexpected(array_decl.error());
+  decl->array_size = std::unique_ptr<AST>(*array_decl);
+
+  Token var_type = consume();
+  Type type = convert_type(var_type.type);
+
+  if (type == Type::ERROR) {
+    return std::unexpected(ParseError::UnexpectedToken);
+  }
+
+  decl->type = type;
+
+  return decl;
+}
