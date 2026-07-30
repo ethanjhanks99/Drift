@@ -61,6 +61,8 @@ struct FunctionDecl : AST {
 struct FunctionReturn : AST {
   OwnershipMod ownership;
   Type type;
+
+  FunctionReturn(SourceLocation loc) : AST(NodeType::FUNCTION_TYPE, loc) {}
 };
 
 struct Param : AST {
@@ -68,6 +70,8 @@ struct Param : AST {
   std::string name;
   bool is_array;
   Type type;
+
+  Param(SourceLocation loc) : AST(NodeType::PARAM, loc) {}
 };
 
 struct StructDef : AST {

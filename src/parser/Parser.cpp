@@ -10,6 +10,7 @@
 #include <expected>
 #include <memory>
 #include <utility>
+#include <vector>
 
 bool Parser::expect(TokenType type) {
   if (is_at_end())
@@ -204,6 +205,85 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
   func->block = std::move(*block);
 
   return func;
+}
+
+std::expected<AST *, ParseError> Parser::parse_function_return() {
+  FunctionReturn *ret = new FunctionReturn(peek().loc);
+
+  OwnershipMod owner = get_ownership();
+  ret->ownership = owner;
+
+  if (is_at_end())
+    return std::unexpected(ParseError::UnexpectedEOF);
+
+  Token ret_type = consume();
+  Type type = convert_type(ret_type.type);
+
+  if (type == Type::ERROR)
+    return std::unexpected(ParseError::UnexpectedToken);
+  ret->type = type;
+
+  return ret;
+}
+
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_param_list() {
+  std::vector<std::unique_ptr<AST>> param_list;
+
+  if (expect(TokenType::RPAREN))
+    return param_list;
+
+  auto param = parse_param();
+  if (!param)
+    return std::unexpected(param.error());
+  param_list.emplace_back(*param);
+
+  if (!expect(TokenType::COMMA))
+    return param_list;
+
+  do {
+    consume();
+    auto next_param = parse_param();
+    if (!next_param)
+      return std::unexpected(next_param.error());
+    param_list.emplace_back(*next_param);
+  } while (expect(TokenType::COMMA));
+
+  return param_list;
+}
+
+std::expected<AST *, ParseError> Parser::parse_param() {
+  Param *param = new Param(peek().loc);
+
+  OwnershipMod owner = get_ownership();
+  param->ownership = owner;
+
+  if (is_at_end())
+    return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(TokenType::IDENTIFIER))
+    return std::unexpected(ParseError::UnexpectedToken);
+  Token name = consume();
+  param->name = name.lexeme;
+
+  if (expect(TokenType::LBRACKET)) {
+    param->is_array = true;
+    consume();
+    if (!expect(TokenType::RBRACKET))
+      return std::unexpected(ParseError::UnexpectedToken);
+    consume();
+  }
+
+  if (!expect(TokenType::COLON))
+    return std::unexpected(ParseError::UnexpectedToken);
+  consume();
+
+  Token param_type = consume();
+  Type type = convert_type(param_type.type);
+  if (type == Type::ERROR)
+    return std::unexpected(ParseError::UnexpectedToken);
+  param->type = type;
+
+  return param;
 }
 
 std::expected<AST *, ParseError> Parser::parse_struct_definition() {
