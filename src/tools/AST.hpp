@@ -168,6 +168,13 @@ struct MatchOption : AST {
   MatchOption(SourceLocation loc) : AST(NodeType::MATCH_OPTIONS, loc) {}
 };
 
+struct VariableDef : AST {
+  std::unique_ptr<AST> decl;
+  std::unique_ptr<AST> expression;
+
+  VariableDef(SourceLocation loc) : AST(NodeType::VARIABLE_DEF, loc) {}
+};
+
 struct VariableDecl : AST {
   VisMod vis_mod;
   OwnershipMod ownership;
@@ -176,13 +183,6 @@ struct VariableDecl : AST {
   Type type;
 
   VariableDecl(SourceLocation loc) : AST(NodeType::VARIABLE_DECL, loc) {}
-};
-
-struct VariableDef : AST {
-  std::unique_ptr<AST> decl;
-  std::unique_ptr<AST> expression;
-
-  VariableDef(SourceLocation loc) : AST(NodeType::VARIABLE_DEF, loc) {}
 };
 
 struct Return : AST {

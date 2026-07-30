@@ -365,6 +365,8 @@ std::expected<AST *, ParseError> Parser::parse_variable_declaration() {
   decl->array_size = std::unique_ptr<AST>(*array_decl);
 
   Token var_type = consume();
+  if (is_at_end())
+    return std::unexpected(ParseError::UnexpectedEOF);
   Type type = convert_type(var_type.type);
 
   if (type == Type::ERROR) {
