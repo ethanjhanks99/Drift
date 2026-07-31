@@ -89,34 +89,31 @@ VisMod Parser::get_visibility() {
  * @return ownership modifier
  */
 OwnershipMod Parser::get_ownership() {
-  static constexpr std::pair<TokenType, OwnershipMod> mods[] = {
-      {TokenType::REF, OwnershipMod::REF},
-      {TokenType::SHARED, OwnershipMod::SHARED},
-      {TokenType::CONST, OwnershipMod::CONST}};
+  static constexpr TokenType tokens[] = {TokenType::REF, TokenType::SHARED,
+                                         TokenType::CONST, TokenType::OWNED};
 
-  for (auto [type, owner] : mods) {
-    if (consume(type))
-      return owner;
+  for (TokenType token : tokens) {
+    if (consume(token))
+      return convert_ownership(token);
   }
-  // OWNED keyword is optional, so must be checked for. Does not cause failure
-  // if not there.
-  (void)consume(TokenType::OWNED);
   return OwnershipMod::OWNED;
 }
 
+/**
+ * @brief Determines type
+ *
+ * @return Type
+ */
 Type Parser::get_type() {
-  static constexpr std::pair<TokenType, Type> types[] = {
-      {TokenType::I8, Type::I8},       {TokenType::I16, Type::I16},
-      {TokenType::I32, Type::I32},     {TokenType::I64, Type::I64},
-      {TokenType::U8, Type::U8},       {TokenType::U16, Type::U16},
-      {TokenType::U32, Type::U32},     {TokenType::U64, Type::U64},
-      {TokenType::FLOAT, Type::FLOAT}, {TokenType::STRING, Type::STRING},
-      {TokenType::CHAR, Type::CHAR},   {TokenType::BOOL, Type::BOOL},
-      {TokenType::VOID, Type::VOID}};
+  static constexpr TokenType types[] = {
+      TokenType::I8,   TokenType::I16,    TokenType::I32,  TokenType::I64,
+      TokenType::U8,   TokenType::U16,    TokenType::U32,  TokenType::U64,
+      TokenType::BOOL, TokenType::STRING, TokenType::CHAR, TokenType::FLOAT,
+      TokenType::VOID};
 
-  for (auto [token, type] : types) {
+  for (TokenType token : types) {
     if (consume(token))
-      return type;
+      return convert_type(token);
   }
 
   return Type::ERROR;
