@@ -20,7 +20,7 @@ private:
   Token curr_token;
   int current = 0;
 
-  Token consume();
+  std::expected<Token, ParseError> consume(TokenType type);
   bool expect(TokenType type);
   bool is_at_end();
   Token peek();

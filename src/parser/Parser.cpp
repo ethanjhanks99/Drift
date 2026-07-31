@@ -12,52 +12,104 @@
 #include <utility>
 #include <vector>
 
+/**
+ * @brief checks next token to see if it's what we expect
+ *
+ * @return true if next token matches expectations, false otherwise
+ */
 bool Parser::expect(TokenType type) {
   if (is_at_end())
     return false;
   return peek().type == type;
 }
 
-Token Parser::consume() { return m_token_stream[current++]; }
+/**
+ * @brief consume a token
+ *
+ * A token is only consumed if it is of the expected type. When consumption
+ * is successful, current is increased.
+ *
+ * @return consumed token if matching, unexpected otherwise
+ */
+std::expected<Token, ParseError> Parser::consume(TokenType type) {
+  if (is_at_end())
+    return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(type))
+    return std::unexpected(ParseError::UnexpectedToken);
+  return m_token_stream[current++];
+}
 
+/**
+ * @brief checks for end of token stream.
+ *
+ * @return true if end is reached, false otherwise.
+ */
 bool Parser::is_at_end() { return peek().type == TokenType::END_OF_FILE; }
 
+/**
+ * @brief peak at next token in token stream
+ *
+ * @return the next token without incrementing current token
+ */
 Token Parser::peek() { return m_token_stream[current]; }
 
+/**
+ * @brief peak at token after the next token
+ *
+ * @return the token after the next in the token stream without increasing
+ * current
+ */
 Token Parser::look_ahead() { return m_token_stream[current + 1]; }
 
+/**
+ * @brief Determines visibility
+ *
+ * Visibility modifiers are optional. If excluded, visibility
+ * defaults to private.
+ *
+ * @return visibility modifier
+ */
 VisMod Parser::get_visibility() {
-  if (expect(TokenType::PUB)) {
-    consume();
+  auto pub = consume(TokenType::PUB);
+  if (pub)
     return VisMod::PUB;
-  }
-  if (expect(TokenType::PRIV)) {
-    consume();
-  }
+
+  // PRIV keyword is optional, so must be checked for. Does not cause failure if
+  // not there.
+  (void)consume(TokenType::PRIV);
   return VisMod::PRIV;
 }
 
+/**
+ * @brief Determines ownership
+ *
+ * Ownership modifiers are optional keywords. If excluded, ownership
+ * will default to OWNED
+ *
+ * @return ownership modifier
+ */
 OwnershipMod Parser::get_ownership() {
-  if (expect(TokenType::REF)) {
-    consume();
-    return OwnershipMod::REF;
-  } else if (expect(TokenType::CONST)) {
-    consume();
-    return OwnershipMod::CONST;
-  } else if (expect(TokenType::SHARED)) {
-    consume();
-    return OwnershipMod::SHARED;
-  } else if (expect(TokenType::OWNED)) {
-    consume();
+  static constexpr std::pair<TokenType, OwnershipMod> mods[] = {
+      {TokenType::REF, OwnershipMod::REF},
+      {TokenType::SHARED, OwnershipMod::SHARED},
+      {TokenType::CONST, OwnershipMod::CONST}};
+
+  for (auto [type, owner] : mods) {
+    if (consume(type))
+      return owner;
   }
+  // OWNED keyword is optional, so must be checked for. Does not cause failure
+  // if not there.
+  (void)consume(TokenType::OWNED);
   return OwnershipMod::OWNED;
 }
 
-AST *Parser::parse() {
-  consume();
-
-  return parse_program().value();
-}
+/**
+ * @brief forward facing method to begin parsing process
+ *
+ * @return the head of the newly created abstract syntax tree
+ */
+AST *Parser::parse() { return parse_program().value(); }
 
 std::expected<AST *, ParseError> Parser::parse_program() {
   SourceLocation loc(peek().loc);
@@ -139,47 +191,37 @@ std::expected<AST *, ParseError> Parser::parse_vismod() {
 }
 
 std::expected<AST *, ParseError> Parser::parse_import() {
-  consume(); // skip IMPORT keyword
+  (void)consume(TokenType::IMPORT); // skip IMPORT keyword
 
-  if (expect(TokenType::END_OF_FILE))
-    return std::unexpected(ParseError::UnexpectedEOF);
+  auto import_name = consume(TokenType::IDENTIFIER);
+  if (!import_name)
+    return std::unexpected(import_name.error());
 
-  if (!expect(TokenType::IDENTIFIER))
-    return std::unexpected(ParseError::UnexpectedToken);
-
-  Token import_name = consume();
-
-  ImportStatement *import = new ImportStatement(import_name.loc);
-  import->module = import_name.lexeme;
+  ImportStatement *import = new ImportStatement(import_name->loc);
+  import->module = import_name->lexeme;
   return import;
 }
 
 std::expected<AST *, ParseError> Parser::parse_function_definition() {
   FunctionDef *func = new FunctionDef(peek().loc);
 
-  while (peek().type == TokenType::ATTRIBUTE) {
-    Token att = consume();
-    func->attributes.emplace_back(new Attribute(att.loc, att.lexeme));
+  auto att = consume(TokenType::ATTRIBUTE);
+  while (att) {
+    func->attributes.emplace_back(new Attribute(att->loc, att->lexeme));
+    att = consume(TokenType::ATTRIBUTE);
   }
-
-  if (is_at_end())
-    return std::unexpected(ParseError::UnexpectedEOF);
 
   func->vis_mod = get_visibility();
 
-  if (expect(TokenType::END_OF_FILE))
-    return std::unexpected(ParseError::UnexpectedEOF);
+  auto keyword = consume(TokenType::FUNC); // skip FUNC keyword
+  if (!keyword)
+    return std::unexpected(keyword.error());
 
-  if (!expect(TokenType::FUNC))
-    return std::unexpected(ParseError::UnexpectedToken);
-  consume(); // skip FUNC keyword
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
 
-  if (!expect(TokenType::IDENTIFIER))
-    return std::unexpected(ParseError::UnexpectedToken);
-
-  Token name = consume();
-
-  func->name = name.lexeme;
+  func->name = name->lexeme;
 
   auto gen_dec = parse_generic_declaration();
   if (!gen_dec)
@@ -213,11 +255,8 @@ std::expected<AST *, ParseError> Parser::parse_function_return() {
   OwnershipMod owner = get_ownership();
   ret->ownership = owner;
 
-  if (is_at_end())
-    return std::unexpected(ParseError::UnexpectedEOF);
-
-  Token ret_type = consume();
-  Type type = convert_type(ret_type.type);
+  auto ret_type = consume(TokenType::VOID);
+  Type type = convert_type(ret_type->type);
 
   if (type == Type::ERROR)
     return std::unexpected(ParseError::UnexpectedToken);
@@ -238,16 +277,15 @@ Parser::parse_param_list() {
     return std::unexpected(param.error());
   param_list.emplace_back(*param);
 
-  if (!expect(TokenType::COMMA))
+  if (!consume(TokenType::COMMA))
     return param_list;
 
-  do {
-    consume();
-    auto next_param = parse_param();
-    if (!next_param)
-      return std::unexpected(next_param.error());
-    param_list.emplace_back(*next_param);
-  } while (expect(TokenType::COMMA));
+  while (consume(TokenType::COMMA)) {
+    auto param = parse_param();
+    if (!param)
+      return std::unexpected(param.error());
+    param_list.emplace_back(*param);
+  }
 
   return param_list;
 }
@@ -258,27 +296,20 @@ std::expected<AST *, ParseError> Parser::parse_param() {
   OwnershipMod owner = get_ownership();
   param->ownership = owner;
 
-  if (is_at_end())
-    return std::unexpected(ParseError::UnexpectedEOF);
-  if (!expect(TokenType::IDENTIFIER))
-    return std::unexpected(ParseError::UnexpectedToken);
-  Token name = consume();
-  param->name = name.lexeme;
+  auto name = consume(TokenType::IDENTIFIER);
+  param->name = name->lexeme;
 
-  if (expect(TokenType::LBRACKET)) {
+  if (consume(TokenType::LBRACKET)) {
     param->is_array = true;
-    consume();
-    if (!expect(TokenType::RBRACKET))
+    if (!consume(TokenType::RBRACKET))
       return std::unexpected(ParseError::UnexpectedToken);
-    consume();
   }
 
-  if (!expect(TokenType::COLON))
+  if (!consume(TokenType::COLON))
     return std::unexpected(ParseError::UnexpectedToken);
-  consume();
 
-  Token param_type = consume();
-  Type type = convert_type(param_type.type);
+  auto param_type = consume(TokenType::VOID); // fix when get_type implemented
+  Type type = convert_type(param_type->type);
   if (type == Type::ERROR)
     return std::unexpected(ParseError::UnexpectedToken);
   param->type = type;
@@ -291,18 +322,13 @@ std::expected<AST *, ParseError> Parser::parse_struct_definition() {
 
   strct->vis_mod = get_visibility();
 
-  if (expect(TokenType::END_OF_FILE))
-    return std::unexpected(ParseError::UnexpectedEOF);
-  if (!expect(TokenType::STRUCT))
-    return std::unexpected(ParseError::UnexpectedToken);
-  consume(); // skip STRUCT keyword
+  (void)consume(TokenType::STRUCT); // skip STRUCT keyword
 
-  if (!expect(TokenType::IDENTIFIER))
-    return std::unexpected(ParseError::UnexpectedToken);
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
 
-  Token name = consume();
-
-  strct->name = name.lexeme;
+  strct->name = name->lexeme;
 
   auto gen_dec = parse_generic_declaration();
   if (!gen_dec)
@@ -319,21 +345,15 @@ std::expected<AST *, ParseError> Parser::parse_struct_definition() {
 
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_struct_block() {
-  if (is_at_end())
-    return std::unexpected(ParseError::UnexpectedEOF);
-  if (!expect(TokenType::LBRACE))
-    return std::unexpected(ParseError::UnexpectedToken);
-  consume();
+  if (auto brace = consume(TokenType::LBRACE); !brace)
+    return std::unexpected(brace.error());
 
   auto fields = parse_struct_fields();
   if (!fields)
     return std::unexpected(fields.error());
 
-  if (is_at_end())
-    return std::unexpected(ParseError::UnexpectedEOF);
-  if (!expect(TokenType::RBRACE))
-    return std::unexpected(ParseError::UnexpectedToken);
-  consume();
+  if (auto brace = consume(TokenType::RBRACE); !brace)
+    return std::unexpected(brace.error());
 
   return fields;
 }
@@ -343,17 +363,13 @@ std::expected<AST *, ParseError> Parser::parse_enum_definition() {
 
   enm->vis_mod = get_visibility();
 
-  if (expect(TokenType::END_OF_FILE))
-    return std::unexpected(ParseError::UnexpectedEOF);
-  if (!expect(TokenType::ENUM))
-    return std::unexpected(ParseError::UnexpectedToken);
-  consume(); // skip ENUM keyword
+  if (auto keyword = consume(TokenType::ENUM); !keyword)
+    return std::unexpected(keyword.error());
 
-  if (!expect(TokenType::IDENTIFIER))
-    return std::unexpected(ParseError::UnexpectedToken);
-
-  Token name = consume();
-  enm->name = name.lexeme;
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
+  enm->name = name->lexeme;
 
   auto gen_dec = parse_generic_declaration();
   if (!gen_dec)
@@ -373,17 +389,13 @@ std::expected<AST *, ParseError> Parser::parse_trait_definition() {
 
   trait->vis_mod = get_visibility();
 
-  if (expect(TokenType::END_OF_FILE))
-    return std::unexpected(ParseError::UnexpectedEOF);
-  if (!expect(TokenType::TRAIT))
-    return std::unexpected(ParseError::UnexpectedToken);
-  consume(); // skip TRAIT keyword
+  if (auto keyword = consume(TokenType::TRAIT); !keyword)
+    return std::unexpected(keyword.error());
 
-  if (!expect(TokenType::IDENTIFIER))
-    return std::unexpected(ParseError::UnexpectedToken);
-
-  Token name = consume();
-  trait->name = name.lexeme;
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
+  trait->name = name->lexeme;
 
   auto inherits = parse_inherits();
   if (!inherits && *inherits != nullptr)
@@ -404,18 +416,13 @@ std::expected<AST *, ParseError> Parser::parse_impl_definition() {
 
   impl->vis_mod = get_visibility();
 
-  if (expect(TokenType::END_OF_FILE))
-    return std::unexpected(ParseError::UnexpectedEOF);
-  if (expect(TokenType::IMPL))
-    return std::unexpected(ParseError::UnexpectedToken);
-  consume(); // skip IMPL keyword
+  if (auto keyword = consume(TokenType::IMPL); !keyword)
+    return std::unexpected(keyword.error());
 
-  if (!expect(TokenType::IDENTIFIER))
-    return std::unexpected(ParseError::UnexpectedToken);
-
-  Token name = consume();
-
-  impl->name = name.lexeme;
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
+  impl->name = name->lexeme;
 
   auto generics = parse_generic_declaration();
   if (!generics)
@@ -453,22 +460,20 @@ std::expected<AST *, ParseError> Parser::parse_variable_declaration() {
 
   decl->ownership = get_ownership();
 
-  if (is_at_end())
-    return std::unexpected(ParseError::UnexpectedEOF);
-  if (!expect(TokenType::IDENTIFIER))
-    return std::unexpected(ParseError::UnexpectedToken);
-  Token name = consume();
-  decl->name = name.lexeme;
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
+  decl->name = name->lexeme;
 
   auto array_decl = parse_array_def();
   if (!array_decl)
     return std::unexpected(array_decl.error());
   decl->array_size = std::unique_ptr<AST>(*array_decl);
 
-  Token var_type = consume();
+  auto var_type = consume(TokenType::VOID);
   if (is_at_end())
     return std::unexpected(ParseError::UnexpectedEOF);
-  Type type = convert_type(var_type.type);
+  Type type = convert_type(var_type->type);
 
   if (type == Type::ERROR) {
     return std::unexpected(ParseError::UnexpectedToken);
