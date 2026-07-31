@@ -27,6 +27,7 @@ private:
   Token look_ahead();
   VisMod get_visibility();
   OwnershipMod get_ownership();
+  Type get_type();
   std::expected<AST *, ParseError> handle_error();
 
   std::expected<AST *, ParseError> parse_program();

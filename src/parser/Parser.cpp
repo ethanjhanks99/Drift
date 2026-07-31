@@ -89,19 +89,34 @@ VisMod Parser::get_visibility() {
  * @return ownership modifier
  */
 OwnershipMod Parser::get_ownership() {
-  static constexpr std::pair<TokenType, OwnershipMod> mods[] = {
-      {TokenType::REF, OwnershipMod::REF},
-      {TokenType::SHARED, OwnershipMod::SHARED},
-      {TokenType::CONST, OwnershipMod::CONST}};
+  static constexpr TokenType tokens[] = {TokenType::REF, TokenType::SHARED,
+                                         TokenType::CONST, TokenType::OWNED};
 
-  for (auto [type, owner] : mods) {
-    if (consume(type))
-      return owner;
+  for (TokenType token : tokens) {
+    if (consume(token))
+      return convert_ownership(token);
   }
-  // OWNED keyword is optional, so must be checked for. Does not cause failure
-  // if not there.
-  (void)consume(TokenType::OWNED);
   return OwnershipMod::OWNED;
+}
+
+/**
+ * @brief Determines type
+ *
+ * @return Type
+ */
+Type Parser::get_type() {
+  static constexpr TokenType types[] = {
+      TokenType::I8,   TokenType::I16,    TokenType::I32,  TokenType::I64,
+      TokenType::U8,   TokenType::U16,    TokenType::U32,  TokenType::U64,
+      TokenType::BOOL, TokenType::STRING, TokenType::CHAR, TokenType::FLOAT,
+      TokenType::VOID};
+
+  for (TokenType token : types) {
+    if (consume(token))
+      return convert_type(token);
+  }
+
+  return Type::ERROR;
 }
 
 /**
@@ -255,12 +270,11 @@ std::expected<AST *, ParseError> Parser::parse_function_return() {
   OwnershipMod owner = get_ownership();
   ret->ownership = owner;
 
-  auto ret_type = consume(TokenType::VOID);
-  Type type = convert_type(ret_type->type);
+  Type ret_type = get_type();
 
-  if (type == Type::ERROR)
+  if (ret_type == Type::ERROR)
     return std::unexpected(ParseError::UnexpectedToken);
-  ret->type = type;
+  ret->type = ret_type;
 
   return ret;
 }
@@ -308,11 +322,10 @@ std::expected<AST *, ParseError> Parser::parse_param() {
   if (!consume(TokenType::COLON))
     return std::unexpected(ParseError::UnexpectedToken);
 
-  auto param_type = consume(TokenType::VOID); // fix when get_type implemented
-  Type type = convert_type(param_type->type);
-  if (type == Type::ERROR)
+  Type param_type = get_type();
+  if (param_type == Type::ERROR)
     return std::unexpected(ParseError::UnexpectedToken);
-  param->type = type;
+  param->type = param_type;
 
   return param;
 }
@@ -470,16 +483,12 @@ std::expected<AST *, ParseError> Parser::parse_variable_declaration() {
     return std::unexpected(array_decl.error());
   decl->array_size = std::unique_ptr<AST>(*array_decl);
 
-  auto var_type = consume(TokenType::VOID);
-  if (is_at_end())
-    return std::unexpected(ParseError::UnexpectedEOF);
-  Type type = convert_type(var_type->type);
-
-  if (type == Type::ERROR) {
+  Type var_type = get_type();
+  if (var_type == Type::ERROR) {
     return std::unexpected(ParseError::UnexpectedToken);
   }
 
-  decl->type = type;
+  decl->type = var_type;
 
   return decl;
 }
