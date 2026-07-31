@@ -104,6 +104,24 @@ OwnershipMod Parser::get_ownership() {
   return OwnershipMod::OWNED;
 }
 
+Type Parser::get_type() {
+  static constexpr std::pair<TokenType, Type> types[] = {
+      {TokenType::I8, Type::I8},       {TokenType::I16, Type::I16},
+      {TokenType::I32, Type::I32},     {TokenType::I64, Type::I64},
+      {TokenType::U8, Type::U8},       {TokenType::U16, Type::U16},
+      {TokenType::U32, Type::U32},     {TokenType::U64, Type::U64},
+      {TokenType::FLOAT, Type::FLOAT}, {TokenType::STRING, Type::STRING},
+      {TokenType::CHAR, Type::CHAR},   {TokenType::BOOL, Type::BOOL},
+      {TokenType::VOID, Type::VOID}};
+
+  for (auto [token, type] : types) {
+    if (consume(token))
+      return type;
+  }
+
+  return Type::ERROR;
+}
+
 /**
  * @brief forward facing method to begin parsing process
  *
@@ -255,12 +273,11 @@ std::expected<AST *, ParseError> Parser::parse_function_return() {
   OwnershipMod owner = get_ownership();
   ret->ownership = owner;
 
-  auto ret_type = consume(TokenType::VOID);
-  Type type = convert_type(ret_type->type);
+  Type ret_type = get_type();
 
-  if (type == Type::ERROR)
+  if (ret_type == Type::ERROR)
     return std::unexpected(ParseError::UnexpectedToken);
-  ret->type = type;
+  ret->type = ret_type;
 
   return ret;
 }
@@ -308,11 +325,10 @@ std::expected<AST *, ParseError> Parser::parse_param() {
   if (!consume(TokenType::COLON))
     return std::unexpected(ParseError::UnexpectedToken);
 
-  auto param_type = consume(TokenType::VOID); // fix when get_type implemented
-  Type type = convert_type(param_type->type);
-  if (type == Type::ERROR)
+  Type param_type = get_type();
+  if (param_type == Type::ERROR)
     return std::unexpected(ParseError::UnexpectedToken);
-  param->type = type;
+  param->type = param_type;
 
   return param;
 }
@@ -470,16 +486,12 @@ std::expected<AST *, ParseError> Parser::parse_variable_declaration() {
     return std::unexpected(array_decl.error());
   decl->array_size = std::unique_ptr<AST>(*array_decl);
 
-  auto var_type = consume(TokenType::VOID);
-  if (is_at_end())
-    return std::unexpected(ParseError::UnexpectedEOF);
-  Type type = convert_type(var_type->type);
-
-  if (type == Type::ERROR) {
+  Type var_type = get_type();
+  if (var_type == Type::ERROR) {
     return std::unexpected(ParseError::UnexpectedToken);
   }
 
-  decl->type = type;
+  decl->type = var_type;
 
   return decl;
 }
