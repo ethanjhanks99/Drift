@@ -1,0 +1,56 @@
+{
+  "date": "2026-07-28T22:14:08.728162593-06:00",
+  "data": {
+    "HEADER_FILES": {
+      "location": {
+        "uri": "file:///home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt",
+        "range": {
+          "start": {
+            "line": 1,
+            "character": 4
+          },
+          "end": {
+            "line": 1,
+            "character": 16
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt",
+      "is_function": false
+    },
+    "SOURCE_FILES": {
+      "location": {
+        "uri": "file:///home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt",
+        "range": {
+          "start": {
+            "line": 5,
+            "character": 4
+          },
+          "end": {
+            "line": 5,
+            "character": 16
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt",
+      "is_function": false
+    },
+    "PROJECT": {
+      "location": {
+        "uri": "file:///home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt",
+        "range": {
+          "start": {
+            "line": 0,
+            "character": 4
+          },
+          "end": {
+            "line": 0,
+            "character": 11
+          }
+        }
+      },
+      "document_info": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt",
+      "is_function": false
+    }
+  }
+}

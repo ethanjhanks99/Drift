@@ -309,12 +309,33 @@ std::expected<AST *, ParseError> Parser::parse_struct_definition() {
     return std::unexpected(gen_dec.error());
   strct->generics = std::move(*gen_dec);
 
-  auto fields = parse_struct_fields();
+  auto fields = parse_struct_block();
   if (!fields)
     return std::unexpected(fields.error());
   strct->fields = std::move(*fields);
 
   return strct;
+}
+
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_struct_block() {
+  if (is_at_end())
+    return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(TokenType::LBRACE))
+    return std::unexpected(ParseError::UnexpectedToken);
+  consume();
+
+  auto fields = parse_struct_fields();
+  if (!fields)
+    return std::unexpected(fields.error());
+
+  if (is_at_end())
+    return std::unexpected(ParseError::UnexpectedEOF);
+  if (!expect(TokenType::RBRACE))
+    return std::unexpected(ParseError::UnexpectedToken);
+  consume();
+
+  return fields;
 }
 
 std::expected<AST *, ParseError> Parser::parse_enum_definition() {

@@ -46,12 +46,12 @@ private:
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_param_list();
   std::expected<AST *, ParseError> parse_param();
-  std::expected<AST *, ParseError> parse_type();
   std::expected<AST *, ParseError> parse_inherits();
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError> parse_block();
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_generic_declaration();
-  std::expected<AST *, ParseError> parse_struct_block();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_struct_block();
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_struct_fields();
   std::expected<AST *, ParseError> parse_struct_field();

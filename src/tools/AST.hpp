@@ -89,6 +89,8 @@ struct StructField : AST {
   std::string name;
   bool is_array;
   Type type;
+
+  StructField(SourceLocation loc) : AST(NodeType::FIELD, loc) {}
 };
 
 struct EnumDef : AST {
