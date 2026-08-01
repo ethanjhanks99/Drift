@@ -371,6 +371,46 @@ Parser::parse_struct_block() {
   return fields;
 }
 
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_struct_fields() {
+  std::vector<std::unique_ptr<AST>> fields;
+
+  do {
+    auto field = parse_struct_field();
+    if (!field)
+      return std::unexpected(field.error());
+    fields.emplace_back(*field);
+  } while (!expect(TokenType::RBRACE));
+
+  return fields;
+}
+
+std::expected<AST *, ParseError> Parser::parse_struct_field() {
+  StructField *field = new StructField(peek().loc);
+
+  field->vis_mod = get_visibility();
+  field->ownership = get_ownership();
+
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
+  field->name = name->lexeme;
+
+  field->is_array = false;
+  if (auto lbracket = consume(TokenType::LBRACKET); !lbracket) {
+    field->is_array = true;
+    if (auto rbracket = consume(TokenType::RBRACKET); !rbracket)
+      return std::unexpected(rbracket.error());
+  }
+
+  Type type = get_type();
+  if (type == Type::ERROR)
+    return std::unexpected(ParseError::UnexpectedEOF);
+  field->type = type;
+
+  return field;
+}
+
 std::expected<AST *, ParseError> Parser::parse_enum_definition() {
   EnumDef *enm = new EnumDef(peek().loc);
 
@@ -484,9 +524,8 @@ std::expected<AST *, ParseError> Parser::parse_variable_declaration() {
   decl->array_size = std::unique_ptr<AST>(*array_decl);
 
   Type var_type = get_type();
-  if (var_type == Type::ERROR) {
+  if (var_type == Type::ERROR)
     return std::unexpected(ParseError::UnexpectedToken);
-  }
 
   decl->type = var_type;
 
