@@ -7,6 +7,7 @@
 #include "tools/SourceLocation.hpp"
 #include "tools/Type.hpp"
 #include "tools/VisMod.hpp"
+#include <execution>
 #include <expected>
 #include <memory>
 #include <utility>
@@ -206,7 +207,10 @@ std::expected<AST *, ParseError> Parser::parse_vismod() {
 }
 
 std::expected<AST *, ParseError> Parser::parse_import() {
-  (void)consume(TokenType::IMPORT); // skip IMPORT keyword
+  // Garuanteed to have the keyword if made to this point, but clang-tidy get's
+  // mad
+  if (auto keyword = consume(TokenType::IMPORT); !keyword)
+    return std::unexpected(keyword.error());
 
   auto import_name = consume(TokenType::IDENTIFIER);
   if (!import_name)
@@ -267,6 +271,9 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
 std::expected<AST *, ParseError> Parser::parse_function_return() {
   FunctionReturn *ret = new FunctionReturn(peek().loc);
 
+  if (auto point = consume(TokenType::RETURN_POINT); !point)
+    return std::unexpected(point.error());
+
   OwnershipMod owner = get_ownership();
   ret->ownership = owner;
 
@@ -283,23 +290,21 @@ std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_param_list() {
   std::vector<std::unique_ptr<AST>> param_list;
 
-  if (expect(TokenType::RPAREN))
+  if (auto paren = consume(TokenType::LPAREN); !paren)
+    return std::unexpected(paren.error());
+
+  if (consume(TokenType::RPAREN))
     return param_list;
 
-  auto param = parse_param();
-  if (!param)
-    return std::unexpected(param.error());
-  param_list.emplace_back(*param);
-
-  if (!consume(TokenType::COMMA))
-    return param_list;
-
-  while (consume(TokenType::COMMA)) {
+  do {
     auto param = parse_param();
     if (!param)
-      return std::unexpected(param.error());
+      return param_list;
     param_list.emplace_back(*param);
-  }
+  } while (consume(TokenType::COMMA));
+
+  if (auto paren = consume(TokenType::RPAREN); !paren)
+    return std::unexpected(paren.error());
 
   return param_list;
 }
@@ -308,6 +313,8 @@ std::expected<AST *, ParseError> Parser::parse_param() {
   Param *param = new Param(peek().loc);
 
   OwnershipMod owner = get_ownership();
+  if (owner == OwnershipMod::ERROR)
+    return std::unexpected(ParseError::UnexpectedToken);
   param->ownership = owner;
 
   auto name = consume(TokenType::IDENTIFIER);
@@ -319,8 +326,8 @@ std::expected<AST *, ParseError> Parser::parse_param() {
       return std::unexpected(ParseError::UnexpectedToken);
   }
 
-  if (!consume(TokenType::COLON))
-    return std::unexpected(ParseError::UnexpectedToken);
+  if (auto colon = consume(TokenType::COLON); !colon)
+    return std::unexpected(colon.error());
 
   Type param_type = get_type();
   if (param_type == Type::ERROR)
@@ -403,6 +410,9 @@ std::expected<AST *, ParseError> Parser::parse_struct_field() {
       return std::unexpected(rbracket.error());
   }
 
+  if (auto colon = consume(TokenType::COLON); !colon)
+    return std::unexpected(colon.error());
+
   Type type = get_type();
   if (type == Type::ERROR)
     return std::unexpected(ParseError::UnexpectedEOF);
@@ -436,6 +446,9 @@ std::expected<AST *, ParseError> Parser::parse_enum_definition() {
 
   return enm;
 }
+
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_enum_block() {}
 
 std::expected<AST *, ParseError> Parser::parse_trait_definition() {
   TraitDef *trait = new TraitDef(peek().loc);
