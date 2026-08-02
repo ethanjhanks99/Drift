@@ -1,4 +1,5 @@
 #include "Parser.hpp"
+#include "build/_deps/catch2-src/src/catch2/internal/catch_meta.hpp"
 #include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
@@ -472,6 +473,39 @@ std::expected<AST *, ParseError> Parser::parse_enum_value() {
   if (!name)
     return std::unexpected(name.error());
   value->name = name->lexeme;
+
+  if (consume(TokenType::LBRACE)) {
+    do {
+      auto field = parse_enum_field();
+      if (!field)
+        return std::unexpected(field.error());
+      value->fields.emplace_back(*field);
+    } while (consume(TokenType::COMMA));
+
+    if (auto brace = consume(TokenType::RBRACE); !brace)
+      return std::unexpected(brace.error());
+  }
+
+  return value;
+}
+
+std::expected<AST *, ParseError> Parser::parse_enum_field() {
+  EnumField *field = new EnumField(peek().loc);
+
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
+  field->name = name->lexeme;
+
+  if (auto colon = consume(TokenType::COLON); !colon)
+    return std::unexpected(colon.error());
+
+  Type type = get_type();
+  if (type == Type::ERROR)
+    return std::unexpected(ParseError::UnexpectedToken);
+  field->type = type;
+
+  return field;
 }
 
 std::expected<AST *, ParseError> Parser::parse_trait_definition() {

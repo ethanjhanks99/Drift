@@ -112,6 +112,8 @@ struct EnumValue : AST {
 struct EnumField : AST {
   std::string name;
   Type type;
+
+  EnumField(SourceLocation loc) : AST(NodeType::FIELD, loc) {}
 };
 
 struct TraitDef : AST {
