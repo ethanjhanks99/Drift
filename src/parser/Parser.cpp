@@ -7,7 +7,6 @@
 #include "tools/SourceLocation.hpp"
 #include "tools/Type.hpp"
 #include "tools/VisMod.hpp"
-#include <execution>
 #include <expected>
 #include <memory>
 #include <utility>
@@ -448,7 +447,32 @@ std::expected<AST *, ParseError> Parser::parse_enum_definition() {
 }
 
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_enum_block() {}
+Parser::parse_enum_block() {
+  if (auto brace = consume(TokenType::LBRACE); !brace)
+    return std::unexpected(brace.error());
+
+  std::vector<std::unique_ptr<AST>> values;
+
+  do {
+    auto value = parse_enum_value();
+    if (!value)
+      return std::unexpected(value.error());
+    values.emplace_back(*value);
+  } while (consume(TokenType::COMMA));
+
+  if (auto brace = consume(TokenType::RBRACE); !brace)
+    return std::unexpected(brace.error());
+  return values;
+}
+
+std::expected<AST *, ParseError> Parser::parse_enum_value() {
+  EnumValue *value = new EnumValue(peek().loc);
+
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
+  value->name = name->lexeme;
+}
 
 std::expected<AST *, ParseError> Parser::parse_trait_definition() {
   TraitDef *trait = new TraitDef(peek().loc);

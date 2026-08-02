@@ -105,6 +105,8 @@ struct EnumDef : AST {
 struct EnumValue : AST {
   std::string name;
   std::vector<std::unique_ptr<AST>> fields;
+
+  EnumValue(SourceLocation loc) : AST(NodeType::ENUM_VALUE, loc) {}
 };
 
 struct EnumField : AST {

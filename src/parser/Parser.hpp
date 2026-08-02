@@ -60,7 +60,7 @@ private:
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_enum_block();
   std::expected<AST *, ParseError> parse_enum_value();
-  std::expected<AST *, ParseError> parse_field();
+  std::expected<AST *, ParseError> parse_enum_field();
   std::expected<AST *, ParseError> parse_module_access();
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_trait_block();
