@@ -120,7 +120,7 @@ struct TraitDef : AST {
   VisMod vis_mod;
   std::string name;
   std::unique_ptr<AST> inherits;
-  std::vector<std::unique_ptr<AST>> contents;
+  std::vector<std::unique_ptr<AST>> block;
 
   TraitDef(SourceLocation loc) : AST(NodeType::TRAIT_DEF, loc) {}
 };

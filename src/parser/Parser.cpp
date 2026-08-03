@@ -530,9 +530,31 @@ std::expected<AST *, ParseError> Parser::parse_trait_definition() {
   auto body = parse_trait_block();
   if (!body)
     return std::unexpected(body.error());
-  trait->contents = std::move(*body);
+  trait->block = std::move(*body);
 
   return trait;
+}
+
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_trait_block() {
+  std::vector<std::unique_ptr<AST>> block;
+
+  if (auto brace = consume(TokenType::LBRACE); !brace)
+    return std::unexpected(brace.error());
+
+  do {
+    auto func = parse_function_declaration();
+    if (!func)
+      return std::unexpected(func.error());
+    block.emplace_back(*func);
+    if (auto semicolon = consume(TokenType::SEMICOLON); !semicolon)
+      return std::unexpected(semicolon.error());
+  } while (consume(TokenType::FUNC));
+
+  if (auto brace = consume(TokenType::RBRACE); !brace)
+    return std::unexpected(brace.error());
+
+  return block;
 }
 
 std::expected<AST *, ParseError> Parser::parse_impl_definition() {
