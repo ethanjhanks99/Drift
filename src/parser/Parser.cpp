@@ -577,7 +577,8 @@ Parser::parse_trait_block() {
     block.emplace_back(*func);
     if (auto semicolon = consume(TokenType::SEMICOLON); !semicolon)
       return std::unexpected(semicolon.error());
-  } while (consume(TokenType::FUNC));
+  } while (consume(TokenType::FUNC) || peek().type == TokenType::PRIV ||
+           peek().type == TokenType::PUB);
 
   if (auto brace = consume(TokenType::RBRACE); !brace)
     return std::unexpected(brace.error());
@@ -596,7 +597,15 @@ std::expected<AST *, ParseError> Parser::parse_impl_definition() {
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
-  impl->name = name->lexeme;
+
+  if (consume(TokenType::FOR)) {
+    impl->trait = name->lexeme;
+    auto name2 = consume(TokenType::IDENTIFIER);
+    if (!name2)
+      return std::unexpected(name2.error());
+    impl->name = name2->lexeme;
+  } else
+    impl->name = name->lexeme;
 
   auto generics = parse_generic_declaration();
   if (!generics)
@@ -609,6 +618,27 @@ std::expected<AST *, ParseError> Parser::parse_impl_definition() {
   impl->impl_block = std::move(*block);
 
   return impl;
+}
+
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_impl_block() {
+  if (auto brace = consume(TokenType::LBRACE); !brace)
+    return std::unexpected(brace.error());
+
+  std::vector<std::unique_ptr<AST>> implementations;
+
+  do {
+    auto func = parse_function_definition();
+    if (!func)
+      return std::unexpected(func.error());
+    implementations.emplace_back(*func);
+  } while (consume(TokenType::FUNC) || peek().type == TokenType::PRIV ||
+           peek().type == TokenType::PUB);
+
+  if (auto brace = consume(TokenType::RBRACE); !brace)
+    return std::unexpected(brace.error());
+
+  return implementations;
 }
 
 std::expected<AST *, ParseError> Parser::parse_variable_definition() {
