@@ -56,6 +56,8 @@ struct FunctionDecl : AST {
   std::vector<std::unique_ptr<AST>> generics;
   std::vector<std::unique_ptr<AST>> param_list;
   std::unique_ptr<AST> function_return;
+
+  FunctionDecl(SourceLocation loc) : AST(NodeType::FUNCTION_DECL, loc) {}
 };
 
 struct FunctionReturn : AST {

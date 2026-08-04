@@ -1,5 +1,4 @@
 #include "Parser.hpp"
-#include "build/_deps/catch2-src/src/catch2/internal/catch_meta.hpp"
 #include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
@@ -77,7 +76,7 @@ VisMod Parser::get_visibility() {
 
   // PRIV keyword is optional, so must be checked for. Does not cause failure if
   // not there.
-  (void)consume(TokenType::PRIV);
+  auto priv = consume(TokenType::PRIV); // Must appease clang-tidy
   return VisMod::PRIV;
 }
 
@@ -207,7 +206,7 @@ std::expected<AST *, ParseError> Parser::parse_vismod() {
 }
 
 std::expected<AST *, ParseError> Parser::parse_import() {
-  // Garuanteed to have the keyword if made to this point, but clang-tidy get's
+  // Guaranteed to have the keyword if made to this point, but clang-tidy get's
   // mad
   if (auto keyword = consume(TokenType::IMPORT); !keyword)
     return std::unexpected(keyword.error());
@@ -264,6 +263,34 @@ std::expected<AST *, ParseError> Parser::parse_function_definition() {
   if (!block)
     return std::unexpected(block.error());
   func->block = std::move(*block);
+
+  return func;
+}
+
+std::expected<AST *, ParseError> Parser::parse_function_declaration() {
+  FunctionDecl *func = new FunctionDecl(peek().loc);
+
+  func->vis_mod = get_visibility();
+
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
+  func->name = name->lexeme;
+
+  auto gen_dec = parse_generic_declaration();
+  if (!gen_dec)
+    return std::unexpected(gen_dec.error());
+  func->generics = std::move(*gen_dec);
+
+  auto param_list = parse_param_list();
+  if (!param_list)
+    return std::unexpected(param_list.error());
+  func->param_list = std::move(*param_list);
+
+  auto function_return = parse_function_return();
+  if (!function_return)
+    return std::unexpected(function_return.error());
+  func->function_return = std::unique_ptr<AST>(*function_return);
 
   return func;
 }
@@ -342,7 +369,8 @@ std::expected<AST *, ParseError> Parser::parse_struct_definition() {
 
   strct->vis_mod = get_visibility();
 
-  (void)consume(TokenType::STRUCT); // skip STRUCT keyword
+  if (auto keyword = consume(TokenType::STRUCT); !keyword)
+    return std::unexpected(keyword.error());
 
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
