@@ -7,6 +7,7 @@
 #include "tools/SourceLocation.hpp"
 #include "tools/Type.hpp"
 #include "tools/VisMod.hpp"
+#include <execution>
 #include <expected>
 #include <memory>
 #include <utility>
@@ -719,4 +720,26 @@ std::expected<AST *, ParseError> Parser::parse_statement() {
   default:
     return parse_simple_statement();
   }
+}
+
+std::expected<AST *, ParseError> Parser::parse_if_statement() {
+  IfStmt *if_stmt = new IfStmt(peek().loc);
+
+  if (auto keyword = consume(TokenType::IF); !keyword)
+    return std::unexpected(keyword.error());
+
+  if (auto paren = consume(TokenType::LPAREN); !paren)
+    return std::unexpected(paren.error());
+
+  auto exp = parse_expression();
+  if (!exp)
+    return std::unexpected(exp.error());
+  if_stmt->condition = std::unique_ptr<AST>(*exp);
+
+  auto block = parse_block();
+  if (!block)
+    return std::unexpected(block.error());
+  if_stmt->block = std::move(*block);
+
+  return if_stmt;
 }
