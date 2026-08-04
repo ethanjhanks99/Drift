@@ -682,3 +682,41 @@ std::expected<AST *, ParseError> Parser::parse_variable_declaration() {
 
   return decl;
 }
+
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_block() {
+  if (auto brace = consume(TokenType::LBRACE); !brace)
+    return std::unexpected(brace.error());
+
+  std::vector<std::unique_ptr<AST>> block;
+
+  while (!consume(TokenType::RBRACE)) {
+    auto statement = parse_statement();
+    if (!statement)
+      return std::unexpected(statement.error());
+    block.emplace_back(*statement);
+  }
+
+  return block;
+}
+
+std::expected<AST *, ParseError> Parser::parse_statement() {
+  switch (peek().type) {
+  case TokenType::IF:
+    return parse_if_statement();
+  case TokenType::WHILE:
+    return parse_while_statement();
+  case TokenType::DO:
+    return parse_do_while_statement();
+  case TokenType::FOR:
+    return parse_for_statement();
+  case TokenType::LOOP:
+    return parse_loop_statement();
+  case TokenType::ASM:
+    return parse_assembly_statement();
+  case TokenType::MATCH:
+    return parse_match_statement();
+  default:
+    return parse_simple_statement();
+  }
+}
