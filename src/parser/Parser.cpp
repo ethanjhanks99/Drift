@@ -749,3 +749,62 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_if_statement() {
 
   return if_stmt;
 }
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_while_statement() {
+  auto while_stmt = std::make_unique<WhileStmt>(peek().loc);
+
+  while_stmt->do_while = false;
+
+  if (auto keyword = consume(TokenType::WHILE); !keyword)
+    return std::unexpected(keyword.error());
+
+  if (auto paren = consume(TokenType::LPAREN); !paren)
+    return std::unexpected(paren.error());
+
+  auto expr = parse_expression();
+  if (!expr)
+    return std::unexpected(expr.error());
+  while_stmt->loop_condition = std::move(*expr);
+
+  if (auto paren = consume(TokenType::RPAREN); !paren)
+    return std::unexpected(paren.error());
+
+  auto block = parse_block();
+  if (!block)
+    return std::unexpected(block.error());
+  while_stmt->block = std::move(*block);
+
+  return while_stmt;
+}
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_do_while_statement() {
+  auto while_stmt = std::make_unique<WhileStmt>(peek().loc);
+
+  while_stmt->do_while = true;
+
+  if (auto keyword = consume(TokenType::DO); !keyword)
+    return std::unexpected(keyword.error());
+
+  auto block = parse_block();
+  if (!block)
+    return std::unexpected(block.error());
+  while_stmt->block = std::move(*block);
+
+  if (auto keyword = consume(TokenType::WHILE); !keyword)
+    return std::unexpected(keyword.error());
+
+  if (auto paren = consume(TokenType::LPAREN); !paren)
+    return std::unexpected(paren.error());
+
+  auto expr = parse_expression();
+  if (!expr)
+    return std::unexpected(expr.error());
+  while_stmt->loop_condition = std::move(*expr);
+
+  if (auto paren = consume(TokenType::RPAREN); !paren)
+    return std::unexpected(paren.error());
+
+  return while_stmt;
+}
