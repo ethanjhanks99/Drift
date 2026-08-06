@@ -808,3 +808,22 @@ Parser::parse_do_while_statement() {
 
   return while_stmt;
 }
+
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_for_statement() {
+  auto for_loop = std::make_unique<ForStmt>(peek().loc);
+
+  auto condition = parse_ranged();
+  if (!condition) {
+    condition = parse_foreach();
+    if (!condition)
+      return std::unexpected(condition.error());
+  }
+  for_loop->loop_condition = std::move(*condition);
+
+  auto block = parse_block();
+  if (!block)
+    return std::unexpected(block.error());
+  for_loop->block = std::move(*block);
+
+  return for_loop;
+}

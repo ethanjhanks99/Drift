@@ -160,6 +160,20 @@ struct ForStmt : AST {
   ForStmt(SourceLocation loc) : AST(NodeType::FOR_STATE, loc) {}
 };
 
+struct Ranged : AST {
+  std::unique_ptr<AST> var_decl;
+  std::unique_ptr<AST> min_exp;
+  std::unique_ptr<AST> max_exp;
+  bool inclusive;
+
+  Ranged(SourceLocation loc) : AST(NodeType::RANGED, loc) {}
+};
+
+struct ForEach : AST {
+  std::unique_ptr<AST> var_decl;
+  std::unique_ptr<AST> mut;
+};
+
 struct LoopStmt : AST {
   std::vector<std::unique_ptr<AST>> block;
 
