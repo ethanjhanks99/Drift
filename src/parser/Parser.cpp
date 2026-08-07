@@ -142,66 +142,73 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_program() {
 }
 
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_top_level_decl() {
+  std::unique_ptr<AST> decl;
   switch (peek().type) {
   case TokenType::IMPORT:
-    return parse_import();
+    decl = std::move(*parse_import());
+    break;
   case TokenType::FUNC:
-    return parse_function_definition();
   case TokenType::ATTRIBUTE:
-    return parse_function_definition();
+    decl = std::move(*parse_function_definition());
+    break;
   case TokenType::STRUCT:
-    return parse_struct_definition();
+    decl = std::move(*parse_struct_definition());
+    break;
   case TokenType::ENUM:
-    return parse_enum_definition();
+    decl = std::move(*parse_enum_definition());
+    break;
   case TokenType::TRAIT:
-    return parse_trait_definition();
+    decl = std::move(*parse_trait_definition());
+    break;
   case TokenType::IMPL:
-    return parse_impl_definition();
+    decl = std::move(*parse_impl_definition());
+    break;
   case TokenType::STATIC:
-    return parse_variable_definition();
   case TokenType::OWNED:
-    return parse_variable_definition();
   case TokenType::REF:
-    return parse_variable_definition();
   case TokenType::SHARED:
-    return parse_variable_definition();
   case TokenType::CONST:
-    return parse_variable_definition();
   case TokenType::IDENTIFIER:
-    return parse_variable_definition();
+    decl = std::move(*parse_variable_definition());
+    break;
   case TokenType::PRIV:
   case TokenType::PUB:
-    return parse_vismod();
+    decl = std::move(*parse_vismod());
+    break;
   default:
     return std::unexpected(ParseError::UnexpectedToken);
   }
+  return decl;
 }
 
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_vismod() {
+  std::unique_ptr<AST> decl;
   switch (look_ahead().type) {
   case TokenType::FUNC:
-    return parse_function_definition();
+    decl = std::move(*parse_function_definition());
+    break;
   case TokenType::STRUCT:
-    return parse_struct_definition();
+    decl = std::move(*parse_struct_definition());
+    break;
   case TokenType::ENUM:
-    return parse_enum_definition();
+    decl = std::move(*parse_enum_definition());
+    break;
   case TokenType::TRAIT:
-    return parse_trait_definition();
+    decl = std::move(*parse_trait_definition());
+    break;
   case TokenType::STATIC:
-    return parse_variable_definition();
   case TokenType::OWNED:
-    return parse_variable_definition();
   case TokenType::REF:
-    return parse_variable_definition();
   case TokenType::SHARED:
-    return parse_variable_definition();
   case TokenType::CONST:
-    return parse_variable_definition();
   case TokenType::IDENTIFIER:
-    return parse_variable_definition();
+    decl = std::move(*parse_variable_definition());
+    break;
   default:
     return std::unexpected(ParseError::UnexpectedToken);
   }
+
+  return decl;
 }
 
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_import() {
@@ -655,6 +662,9 @@ Parser::parse_variable_definition() {
     return std::unexpected(decl.error());
   def->decl = std::move(*decl);
 
+  if (expect(TokenType::SEMICOLON))
+    return decl;
+
   auto expression = parse_expression();
   if (!expression)
     return std::unexpected(expression.error());
@@ -708,24 +718,26 @@ Parser::parse_block() {
 }
 
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_statement() {
+  std::unique_ptr<AST> statement;
   switch (peek().type) {
   case TokenType::IF:
-    return parse_if_statement();
+    statement = std::move(*parse_if_statement());
   case TokenType::WHILE:
-    return parse_while_statement();
+    statement = std::move(*parse_while_statement());
   case TokenType::DO:
-    return parse_do_while_statement();
+    statement = std::move(*parse_do_while_statement());
   case TokenType::FOR:
-    return parse_for_statement();
+    statement = std::move(*parse_for_statement());
   case TokenType::LOOP:
-    return parse_loop_statement();
+    statement = std::move(*parse_loop_statement());
   case TokenType::ASM:
-    return parse_assembly_statement();
+    statement = std::move(*parse_assembly_statement());
   case TokenType::MATCH:
-    return parse_match_statement();
+    statement = std::move(*parse_match_statement());
   default:
-    return parse_simple_statement();
+    statement = std::move(*parse_simple_statement());
   }
+  return statement;
 }
 
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_if_statement() {
@@ -978,4 +990,6 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_match_option() {
 }
 
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_simple_statement() {}
+Parser::parse_simple_statement() {
+  switch (peek().type) {}
+}
