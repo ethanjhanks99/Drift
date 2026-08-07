@@ -76,8 +76,10 @@ private:
   std::expected<std::unique_ptr<AST>, ParseError> parse_loop_statement();
   std::expected<std::unique_ptr<AST>, ParseError> parse_assembly_statement();
   std::expected<std::unique_ptr<AST>, ParseError> parse_match_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_match_block();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_match_options();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_match_block();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_match_options();
   std::expected<std::unique_ptr<AST>, ParseError> parse_match_option();
   std::expected<std::unique_ptr<AST>, ParseError> parse_simple_statement();
   std::expected<std::unique_ptr<AST>, ParseError> parse_assignment();

@@ -911,3 +911,53 @@ Parser::parse_assembly_statement() {
 
   return asm_stmt;
 }
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_match_statement() {
+  if (auto keyword = consume(TokenType::MATCH); !keyword)
+    return std::unexpected(keyword.error());
+
+  auto match = std::make_unique<MatchStmt>(peek().loc);
+
+  auto mut = parse_mutable();
+  if (!mut)
+    return std::unexpected(mut.error());
+  match->mut = std::move(*mut);
+
+  auto block = parse_match_block();
+  if (!block)
+    return std::unexpected(block.error());
+  match->block = std::move(*block);
+
+  return match;
+}
+
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_match_block() {
+  if (auto brace = consume(TokenType::LBRACE); !brace)
+    return std::unexpected(brace.error());
+
+  auto options = parse_match_options();
+  if (!options)
+    return std::unexpected(options.error());
+
+  return options;
+}
+
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_match_options() {
+  std::vector<std::unique_ptr<AST>> options;
+
+  do {
+    auto option = parse_match_option();
+    if (!option)
+      return std::unexpected(option.error());
+    options.push_back(std::move(*option));
+  } while (!consume(TokenType::RBRACE));
+
+  return options;
+}
+
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_match_option() {
+  auto option = std::make_unique<MatchOption>(peek().loc);
+}
