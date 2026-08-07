@@ -172,12 +172,20 @@ struct Ranged : AST {
 struct ForEach : AST {
   std::unique_ptr<AST> var_decl;
   std::unique_ptr<AST> mut;
+
+  ForEach(SourceLocation loc) : AST(NodeType::FOREACH, loc) {}
 };
 
 struct LoopStmt : AST {
   std::vector<std::unique_ptr<AST>> block;
 
   LoopStmt(SourceLocation loc) : AST(NodeType::LOOP_STATE, loc) {}
+};
+
+struct AsmStmt : AST {
+  std::vector<std::unique_ptr<AST>> block;
+
+  AsmStmt(SourceLocation loc) : AST(NodeType::ASM_STATE, loc) {}
 };
 
 struct MatchStmt : AST {

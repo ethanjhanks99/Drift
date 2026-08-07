@@ -1,6 +1,7 @@
 #pragma once
 
 enum class NodeType {
+  ASM_STATE,
   PROGRAM,
   TOP_LEVEL_DECL,
   IMPORT_STATE,

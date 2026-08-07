@@ -863,3 +863,51 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_ranged() {
 
   return range;
 }
+
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_foreach() {
+  auto for_each = std::make_unique<ForEach>(peek().loc);
+
+  auto var = parse_variable_declaration();
+  if (!var)
+    return std::unexpected(var.error());
+  for_each->var_decl = std::move(*var);
+
+  if (auto colon = consume(TokenType::COLON); !colon)
+    return std::unexpected(colon.error());
+
+  auto mut = parse_mutable();
+  if (!mut)
+    return std::unexpected(mut.error());
+  for_each->mut = std::move(*mut);
+
+  return for_each;
+}
+
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_loop_statement() {
+  if (auto keyword = consume(TokenType::LOOP); !keyword)
+    return std::unexpected(keyword.error());
+
+  auto loop = std::make_unique<LoopStmt>(peek().loc);
+
+  auto block = parse_block();
+  if (!block)
+    return std::unexpected(block.error());
+  loop->block = std::move(*block);
+
+  return loop;
+}
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_assembly_statement() {
+  if (auto keyword = consume(TokenType::ASM); !keyword)
+    return std::unexpected(keyword.error());
+
+  auto asm_stmt = std::make_unique<AsmStmt>(peek().loc);
+
+  auto block = parse_block();
+  if (!block)
+    return std::unexpected(block.error());
+  asm_stmt->block = std::move(*block);
+
+  return asm_stmt;
+}
