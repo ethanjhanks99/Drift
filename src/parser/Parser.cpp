@@ -960,4 +960,22 @@ Parser::parse_match_options() {
 
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_match_option() {
   auto option = std::make_unique<MatchOption>(peek().loc);
+
+  auto val = parse_expression();
+  if (!val)
+    return std::unexpected(val.error());
+  option->comp = std::move(*val);
+
+  if (auto arrow = consume(TokenType::MATCH_ARROW); !arrow)
+    return std::unexpected(arrow.error());
+
+  auto block = parse_block();
+  if (!block)
+    return std::unexpected(block.error());
+  option->block = std::move(*block);
+
+  return option;
 }
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_simple_statement() {}
