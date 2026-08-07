@@ -812,6 +812,9 @@ Parser::parse_do_while_statement() {
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_for_statement() {
   auto for_loop = std::make_unique<ForStmt>(peek().loc);
 
+  if (auto paren = consume(TokenType::LPAREN); !paren)
+    return std::unexpected(paren.error());
+
   auto condition = parse_ranged();
   if (!condition) {
     condition = parse_foreach();
@@ -820,10 +823,43 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_for_statement() {
   }
   for_loop->loop_condition = std::move(*condition);
 
+  if (auto paren = consume(TokenType::RPAREN); !paren)
+    return std::unexpected(paren.error());
+
   auto block = parse_block();
   if (!block)
     return std::unexpected(block.error());
   for_loop->block = std::move(*block);
 
   return for_loop;
+}
+
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_ranged() {
+  auto range = std::make_unique<Ranged>(peek().loc);
+
+  auto var = parse_variable_declaration();
+  if (!var)
+    return std::unexpected(var.error());
+
+  auto min_expr = parse_expression();
+  if (!min_expr)
+    return std::unexpected(min_expr.error());
+
+  auto range_type = consume(TokenType::RANGE);
+
+  if (!range_type) {
+    range_type = consume(TokenType::RANGE_INCLUSIVE);
+    if (!range_type)
+      return std::unexpected(range_type.error());
+    range->inclusive = true;
+  } else {
+    range->inclusive = false;
+  }
+
+  auto max_expr = parse_expression();
+  if (!max_expr)
+    return std::unexpected(max_expr.error());
+  range->max_exp = std::move(*max_expr);
+
+  return range;
 }
