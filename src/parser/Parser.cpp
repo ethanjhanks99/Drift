@@ -991,5 +991,35 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_match_option() {
 
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_simple_statement() {
-  switch (peek().type) {}
+  std::unique_ptr<AST> decl;
+  switch (peek().type) {
+  case TokenType::CONST:
+  case TokenType::REF:
+  case TokenType::SHARED:
+  case TokenType::OWNED:
+    decl = std::move(*parse_variable_definition());
+    break;
+  case TokenType::IDENTIFIER:
+    if (look_ahead().type == TokenType::COLON)
+      decl = std::move(*parse_variable_definition());
+    else if (look_ahead().type == TokenType::ASSIGN)
+      decl = std::move(*parse_assignment());
+    break;
+  case TokenType::RETURN:
+    decl = std::move(*parse_return_statement());
+    break;
+  case TokenType::CONTINUE:
+    break;
+  case TokenType::BREAK:
+    decl = std::move(*parse_break_statement());
+    break;
+  default:
+    decl = std::move(*parse_expression());
+    break;
+  }
+
+  if (auto semicolon = consume(TokenType::SEMICOLON); !semicolon)
+    return std::unexpected(semicolon.error());
+
+  return decl;
 }
