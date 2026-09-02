@@ -190,6 +190,12 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_top_level_decl() {
   return decl;
 }
 
+/**
+ * @brief used to parse a top level declaration/definition that has a
+ * visibility modifier
+ *
+ * @return AST node for a declaration/definition with a visibility modifier
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_vismod() {
   std::unique_ptr<AST> decl;
   switch (look_ahead().type) {
@@ -220,6 +226,13 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_vismod() {
   return decl;
 }
 
+/**
+ * @brief parses an import statement
+ *
+ * @astfields the name of the module being imported
+ *
+ * @return import statement node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_import() {
   // Guaranteed to have the keyword if made to this point, but clang-tidy gets
   // mad
@@ -235,6 +248,11 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_import() {
   return import;
 }
 
+/**
+ * @brief parses a function definition
+ *
+ *
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_function_definition() {
   auto func = std::make_unique<FunctionDef>(peek().loc);
