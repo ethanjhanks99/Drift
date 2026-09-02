@@ -655,15 +655,21 @@ Parser::parse_impl_block() {
 
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_variable_definition() {
-  auto def = std::make_unique<VariableDef>(peek().loc);
 
   auto decl = parse_variable_declaration();
   if (!decl)
     return std::unexpected(decl.error());
-  def->decl = std::move(*decl);
 
+  // if the statement ends after the declaration, then return a variable
+  // declaration instead of a definition
   if (expect(TokenType::SEMICOLON))
     return decl;
+
+  auto def = std::make_unique<VariableDef>(peek().loc);
+  def->decl = std::move(*decl);
+
+  if (auto assign = consume(TokenType::ASSIGN); !assign)
+    return std::unexpected(assign.error());
 
   auto expression = parse_expression();
   if (!expression)
