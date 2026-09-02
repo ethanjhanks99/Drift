@@ -141,6 +141,15 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_program() {
   return program;
 }
 
+/**
+ * @brief parses a top level declaration
+ *
+ * A top level declaration is defined as any declaration or definition that
+ * takes place outside of a function, struct, or any other body.
+ *
+ * @return AST node for the top level declaration
+ *
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_top_level_decl() {
   std::unique_ptr<AST> decl;
   switch (peek().type) {
