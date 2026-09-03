@@ -15,6 +15,9 @@
 /**
  * @brief checks next token to see if it's what we expect
  *
+ * @params
+ * type (TokenType): expected type of the token being checked
+ *
  * @return true if next token matches expectations, false otherwise
  */
 bool Parser::expect(TokenType type) {
@@ -28,6 +31,9 @@ bool Parser::expect(TokenType type) {
  *
  * A token is only consumed if it is of the expected type. When consumption
  * is successful, current is increased.
+ *
+ * @params
+ * type (TokenType): expected type of the token we are consuming
  *
  * @return consumed token if matching, unexpected otherwise
  */
@@ -229,7 +235,8 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_vismod() {
 /**
  * @brief parses an import statement
  *
- * @astfields the name of the module being imported
+ * @astfields
+ * module (string):  name of the module being imported
  *
  * @return import statement node
  */
@@ -251,7 +258,16 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_import() {
 /**
  * @brief parses a function definition
  *
+ * @astfields
+ * attributes (vector<AST>):  a list of attribute nodes
+ * vis_mod (VisMod):          the visibility of the function
+ * name (string):             name of the function
+ * generics (vector<AST>):    list of generic nodes
+ * param_list (vector<AST>):  list of param nodes
+ * function_return (AST):     type that the function returns
+ * block (vector<AST>):       list of statements made within the function
  *
+ * @return function definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_function_definition() {
@@ -301,6 +317,18 @@ Parser::parse_function_definition() {
   return func;
 }
 
+/**
+ * @brief parses function declaration
+ *
+ * @astfields
+ * vis_mod (VisMod):          visibility modifier
+ * name (string):             name of the function
+ * generics (AST):            list of function generic types
+ * param_list (vector<AST>):  list of parameters
+ * function_return (AST):     type the function returns
+ *
+ * @return function declaration AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_function_declaration() {
   auto func = std::make_unique<FunctionDecl>(peek().loc);
@@ -330,6 +358,15 @@ Parser::parse_function_declaration() {
   return func;
 }
 
+/**
+ * @brief parses a function return
+ *
+ * @astfields
+ * ownership (OwnershipMod):  the ownership type of the return value
+ * type (Type):               the type the return value must be
+ *
+ * @return function return AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_function_return() {
   auto ret = std::make_unique<FunctionReturn>(peek().loc);
@@ -349,6 +386,11 @@ Parser::parse_function_return() {
   return ret;
 }
 
+/**
+ * @brief parses parameters from a function definition/declaration
+ *
+ * @return a list of param AST nodes
+ */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_param_list() {
   std::vector<std::unique_ptr<AST>> param_list;
@@ -372,6 +414,18 @@ Parser::parse_param_list() {
   return param_list;
 }
 
+/**
+ * @brief parses a parameter
+ *
+ * @astfields
+ * ownership (OwnershipMod):  modifies how this parameter is owned
+ * name (string):             name of the parameter
+ * is_array (boolean):        signifies if this parameter is an array type
+ * type (Type):               type of the parameter. If an array, then type that
+ *                            the array contains
+ *
+ * @return a param AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
   auto param = std::make_unique<Param>(peek().loc);
 
@@ -400,6 +454,17 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
   return param;
 }
 
+/**
+ * @brief parse a struct definition
+ *
+ * @astfields
+ * vis_mod (VisMod):        visibility modefier for struct
+ * name (string):           name of the struct
+ * generics (vector<AST>):  generic types in struct
+ * fields (vector<AST>):    fields associated with the struct
+ *
+ * @return struct definition AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_struct_definition() {
   auto strct = std::make_unique<StructDef>(peek().loc);
@@ -428,6 +493,11 @@ Parser::parse_struct_definition() {
   return strct;
 }
 
+/**
+ * @brief parse a struct block
+ *
+ * @return a vector of field AST
+ */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_struct_block() {
   if (auto brace = consume(TokenType::LBRACE); !brace)
@@ -443,6 +513,11 @@ Parser::parse_struct_block() {
   return fields;
 }
 
+/**
+ * @brief parse struct fields
+ *
+ * @return vector of field ASTs
+ */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_struct_fields() {
   std::vector<std::unique_ptr<AST>> fields;
@@ -457,6 +532,18 @@ Parser::parse_struct_fields() {
   return fields;
 }
 
+/**
+ * @brief parse a struct field
+ *
+ * @astfields
+ * vis_mod (VisMod):          visibility modifier for the field
+ * ownership (OwnershipMod):  ownership modifier for the field
+ * name (string):             name of the field
+ * is_array (boolean):        signals if field is an array type
+ * type (Type):               type of the field
+ *
+ * @return field AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_struct_field() {
   auto field = std::make_unique<StructField>(peek().loc);
 
@@ -486,6 +573,17 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_struct_field() {
   return field;
 }
 
+/**
+ * @brief parse an enum definition
+ *
+ * @astfields
+ * vis_mod (VisMod):        visibility modifier for the enum
+ * name (string):           name of the enum
+ * generics (vector<AST>):  generics associated with the enum
+ * enum_vals (vector<AST>): values defined within the enum
+ *
+ * @return enum definition AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_enum_definition() {
   auto enm = std::make_unique<EnumDef>(peek().loc);
@@ -513,6 +611,11 @@ Parser::parse_enum_definition() {
   return enm;
 }
 
+/**
+ * @brief parses an enum block
+ *
+ * @return vector of enum values
+ */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_enum_block() {
   if (auto brace = consume(TokenType::LBRACE); !brace)
@@ -532,6 +635,15 @@ Parser::parse_enum_block() {
   return values;
 }
 
+/**
+ * @brief parses an enum value
+ *
+ * @astfields
+ * name (string):         name of the enum value
+ * fields (vector<AST>):  vector of field AST nodes
+ *
+ * @return enum value AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_value() {
   auto value = std::make_unique<EnumValue>(peek().loc);
 
@@ -555,6 +667,15 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_value() {
   return value;
 }
 
+/**
+ * @brief parse an enum value field
+ *
+ * @astfields
+ * name (string):   name of the field
+ * type (Type):     field type
+ *
+ * @return an enum value field AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_field() {
   auto field = std::make_unique<EnumField>(peek().loc);
 
@@ -574,6 +695,9 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_field() {
   return field;
 }
 
+/**
+ *
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_trait_definition() {
   auto trait = std::make_unique<TraitDef>(peek().loc);
