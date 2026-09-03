@@ -2,6 +2,7 @@
 #include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
+#include "tools/AssignOp.hpp"
 #include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
 #include "tools/SourceLocation.hpp"
@@ -123,6 +124,26 @@ Type Parser::get_type() {
   }
 
   return Type::ERROR;
+}
+
+/**
+ * @brief determines AssignOp from TokenType
+ *
+ * @return AssignOp, unexpected if failure
+ */
+std::expected<AssignOp, ParseError> Parser::get_assign_op() {
+  static constexpr TokenType assign_types[] = {
+      TokenType::ASSIGN, TokenType::PLUS_EQUALS, TokenType::MINUS_EQUALS,
+      TokenType::MULT_EQUALS, TokenType::DIVIDE_EQUALS};
+
+  for (TokenType token : assign_types) {
+    if (consume(token))
+      return convert_assign(token);
+  }
+
+  if (peek().type == TokenType::END_OF_FILE)
+    return std::unexpected(ParseError::UnexpectedEOF);
+  return std::unexpected(ParseError::UnexpectedToken);
 }
 
 /**
@@ -1351,4 +1372,35 @@ Parser::parse_simple_statement() {
     return std::unexpected(semicolon.error());
 
   return decl;
+}
+
+/**
+ * @brief parse assignment
+ *
+ * @astfields
+ * op (AssignOp):     type of assignment
+ * mut (AST):         mutable being assigned TokenType
+ * expression (AST):  expression being assigned
+ *
+ * @return assignment AST node
+ */
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_assignment() {
+  auto assign = std::make_unique<Assignment>(peek().loc);
+
+  auto mut = parse_mutable();
+  if (!mut)
+    return std::unexpected(mut.error());
+  assign->mut = std::move(*mut);
+
+  auto op = get_assign_op();
+  if (!op)
+    return std::unexpected(op.error());
+  assign->op = *op;
+
+  auto expr = parse_expression();
+  if (!expr)
+    return std::unexpected(expr.error());
+  assign->expression = std::move(*expr);
+
+  return assign;
 }

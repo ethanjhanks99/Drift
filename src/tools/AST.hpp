@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tools/AssignOp.hpp"
 #include "tools/BinaryOp.hpp"
 #include "tools/NodeType.hpp"
 #include "tools/OwnershipMod.hpp"
@@ -217,6 +218,14 @@ struct VariableDecl : AST {
   Type type;
 
   VariableDecl(SourceLocation loc) : AST(NodeType::VARIABLE_DECL, loc) {}
+};
+
+struct Assignment : AST {
+  AssignOp op;
+  std::unique_ptr<AST> mut;
+  std::unique_ptr<AST> expression;
+
+  Assignment(SourceLocation loc) : AST(NodeType::ASSIGNMENT, loc) {}
 };
 
 struct Return : AST {

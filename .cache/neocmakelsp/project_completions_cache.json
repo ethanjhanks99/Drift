@@ -1,5 +1,5 @@
 {
-  "date": "2026-07-28T22:14:08.728116078-06:00",
+  "date": "2026-09-03T17:11:40.675678890-06:00",
   "data": {
     "/home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt": [
       {
@@ -19,6 +19,26 @@
         "kind": 12,
         "detail": "Value",
         "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt"
+      }
+    ],
+    "/home/ethanh/Projects/compilers/Drift/src/tools/CMakeLists.txt": [
+      {
+        "label": "PROJECT",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/tools/CMakeLists.txt"
+      },
+      {
+        "label": "HEADER_FILES",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/tools/CMakeLists.txt"
+      },
+      {
+        "label": "SOURCE_FILES",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/tools/CMakeLists.txt"
       }
     ]
   }

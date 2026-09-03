@@ -1,6 +1,7 @@
 set(PROJECT drift_tools)
 set(HEADER_FILES
   AST.hpp
+  AssignOp.hpp
   BinaryOp.hpp
   NodeType.hpp
   SourceLocation.hpp
@@ -13,6 +14,7 @@ set(HEADER_FILES
 
 set(SOURCE_FILES
   AST.cpp
+  AssignOp.cpp
   BinaryOp.cpp
   SourceLocation.cpp
   Type.cpp
