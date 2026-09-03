@@ -696,7 +696,15 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_field() {
 }
 
 /**
+ * @brief parse trait definition
  *
+ * @astfields
+ * vis_mod (VisMod):      visibility modifier for trait
+ * name (string):         name of the trait
+ * inherits (AST):        trait that this trait inherits from
+ * block (vector<AST>):   body of the trait
+ *
+ * @return trait definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_trait_definition() {
@@ -725,6 +733,12 @@ Parser::parse_trait_definition() {
   return trait;
 }
 
+/**
+ * @brief parse trait block
+ *
+ * @return vector of AST nodes. Trait blocks will be made of function
+ * declarations
+ */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_trait_block() {
   std::vector<std::unique_ptr<AST>> block;
@@ -748,6 +762,20 @@ Parser::parse_trait_block() {
   return block;
 }
 
+/**
+ * @brief parse implementation definition
+ * implementations implement functions for any type, including implementing
+ * traits for specific types
+ *
+ * @astfields
+ * vis_mod (VisMod):          visibility modifier for the implementation
+ * name (string):             name of the type being implemented
+ * trait (string):            name of the trait being implemented
+ * generics (vector<AST>):    generics declared or defined for implementation
+ * impl_block (vector<AST>):  block for implementation
+ *
+ * @return implementation definition AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_impl_definition() {
   auto impl = std::make_unique<ImplDef>(peek().loc);
@@ -783,6 +811,12 @@ Parser::parse_impl_definition() {
   return impl;
 }
 
+/**
+ * @brief parse implementation block
+ * block will only contain function definitions
+ *
+ * @return vector of function definition AST nodes
+ */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_impl_block() {
   if (auto brace = consume(TokenType::LBRACE); !brace)
@@ -804,6 +838,15 @@ Parser::parse_impl_block() {
   return implementations;
 }
 
+/**
+ * @brief parse variable definition
+ *
+ * @astfields
+ * decl (AST):        variable declaration AST node
+ * expression (AST):  expression AST node. evaluates to the value being assigned
+ *
+ * @return variable definition AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_variable_definition() {
 
@@ -830,6 +873,18 @@ Parser::parse_variable_definition() {
   return def;
 }
 
+/**
+ * @brief parse variable declaration
+ *
+ * @astfields
+ * vis_mod (VisMod):            visibility modifier for the variable
+ * ownership (OwnershipMod):    ownership modifier for the variable
+ * name (string):               name of the variable
+ * array_size (integer):        if the variable is an array, this will hold the
+ * size type (Type):                 the variable's type
+ *
+ * @return variable declaration AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_variable_declaration() {
   auto decl = std::make_unique<VariableDecl>(peek().loc);
@@ -857,6 +912,11 @@ Parser::parse_variable_declaration() {
   return decl;
 }
 
+/**
+ * @brief parse block body
+ *
+ * @return vector of statement AST nodes
+ */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_block() {
   if (auto brace = consume(TokenType::LBRACE); !brace)
@@ -874,6 +934,12 @@ Parser::parse_block() {
   return block;
 }
 
+/**
+ * @brief parse statement
+ * determines the statement type and calls appropriate function
+ *
+ * @return statement AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_statement() {
   std::unique_ptr<AST> statement;
   switch (peek().type) {
@@ -897,6 +963,15 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_statement() {
   return statement;
 }
 
+/**
+ * @brief parse if statement
+ *
+ * @astfields
+ * condition (AST):     an expression that evaluates to True or False
+ * block (vector<AST>): body of the if statement
+ *
+ * @return if statement AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_if_statement() {
   auto if_stmt = std::make_unique<IfStmt>(peek().loc);
 
@@ -919,6 +994,16 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_if_statement() {
   return if_stmt;
 }
 
+/**
+ * @brief parse while statement
+ *
+ * @astfields
+ * do_while (boolean):          determines if loop is a do-while or normal while
+ * loop_condition (AST):        expression that evaluates to True or False
+ * block (vector<AST>):         body of the while statement
+ *
+ * @return while statement AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_while_statement() {
   auto while_stmt = std::make_unique<WhileStmt>(peek().loc);
@@ -947,6 +1032,16 @@ Parser::parse_while_statement() {
   return while_stmt;
 }
 
+/**
+ * @brief parse do while statement
+ *
+ * @astfields
+ * do_while (boolean):      determines if loop is do-while. set to true
+ * block (vector<AST>):     body of the do while loop
+ * loop_condition (AST):    expression that evaluates to True or False
+ *
+ * @return while statement AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_do_while_statement() {
   auto while_stmt = std::make_unique<WhileStmt>(peek().loc);
@@ -978,6 +1073,15 @@ Parser::parse_do_while_statement() {
   return while_stmt;
 }
 
+/**
+ * @brief parse for loop
+ *
+ * @astfields
+ * loop_condition (AST):  either ranged or foreach AST node
+ * block (vector<AST>):   body of the for loop
+ *
+ * @return for loop AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_for_statement() {
   auto for_loop = std::make_unique<ForStmt>(peek().loc);
 
@@ -1003,6 +1107,15 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_for_statement() {
   return for_loop;
 }
 
+/**
+ * @brief parse range for loop condition
+ *
+ * @astfields
+ * inclusive (boolean):   if the max expression should be included then true
+ * max_exp (AST):         expression that evaluates to an integer
+ *
+ * @return ranged AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_ranged() {
   auto range = std::make_unique<Ranged>(peek().loc);
 
@@ -1033,6 +1146,15 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_ranged() {
   return range;
 }
 
+/**
+ * @brief parse for each
+ *
+ * @astfields
+ * var_decl (AST):      variable declaration used in each iteration
+ * mut (AST):           mutable being iterated over
+ *
+ * @return foreach AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_foreach() {
   auto for_each = std::make_unique<ForEach>(peek().loc);
 
@@ -1052,6 +1174,14 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_foreach() {
   return for_each;
 }
 
+/**
+ * @brief parse loop statement
+ *
+ * @astfields
+ * block (vector<AST>): body of loop statement
+ *
+ * @return loop AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_loop_statement() {
   if (auto keyword = consume(TokenType::LOOP); !keyword)
     return std::unexpected(keyword.error());
@@ -1066,6 +1196,14 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_loop_statement() {
   return loop;
 }
 
+/**
+ * @brief parse assembly statement
+ *
+ * @astfields
+ * body (vector<AST>): body of assembly statement
+ *
+ * @return assembly statement AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_assembly_statement() {
   if (auto keyword = consume(TokenType::ASM); !keyword)
@@ -1081,6 +1219,15 @@ Parser::parse_assembly_statement() {
   return asm_stmt;
 }
 
+/**
+ * @brief parse match statement
+ *
+ * @astfields
+ * mut (AST):             mutable being matched against
+ * block (vector<AST>):   match body
+ *
+ * @return match statement AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_match_statement() {
   if (auto keyword = consume(TokenType::MATCH); !keyword)
@@ -1101,6 +1248,11 @@ Parser::parse_match_statement() {
   return match;
 }
 
+/**
+ * @brief parse match block
+ *
+ * @return vector of match option AST nodes
+ */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_match_block() {
   if (auto brace = consume(TokenType::LBRACE); !brace)
@@ -1113,6 +1265,11 @@ Parser::parse_match_block() {
   return options;
 }
 
+/**
+ * @brief parse match options
+ *
+ * @return vector of match option AST nodes
+ */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
 Parser::parse_match_options() {
   std::vector<std::unique_ptr<AST>> options;
@@ -1127,6 +1284,15 @@ Parser::parse_match_options() {
   return options;
 }
 
+/**
+ * @brief parse match option
+ *
+ * @astfields
+ * comp (AST):            the expression being matched
+ * block (vector<AST>):   body of the match option
+ *
+ * @return match option AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_match_option() {
   auto option = std::make_unique<MatchOption>(peek().loc);
 
@@ -1146,6 +1312,12 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_match_option() {
   return option;
 }
 
+/**
+ * @brief parse simple statement
+ * a simple statement does not have a body
+ *
+ * @return simple statement AST node
+ */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_simple_statement() {
   std::unique_ptr<AST> decl;
