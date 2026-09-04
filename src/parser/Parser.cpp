@@ -2,189 +2,13 @@
 #include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
-#include "tools/AssignOp.hpp"
-#include "tools/BinaryOp.hpp"
 #include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
 #include "tools/SourceLocation.hpp"
-#include "tools/Type.hpp"
-#include "tools/VisMod.hpp"
 #include <expected>
 #include <memory>
 #include <utility>
 #include <vector>
-
-/**
- * @brief checks next token to see if it's what we expect
- *
- * @params
- * type (TokenType): expected type of the token being checked
- *
- * @return true if next token matches expectations, false otherwise
- */
-bool Parser::expect(TokenType type) {
-  if (is_at_end())
-    return false;
-  return peek().type == type;
-}
-
-/**
- * @brief consume a token
- *
- * A token is only consumed if it is of the expected type. When consumption
- * is successful, current is increased.
- *
- * @params
- * type (TokenType): expected type of the token we are consuming
- *
- * @return consumed token if matching, unexpected otherwise
- */
-std::expected<Token, ParseError> Parser::consume(TokenType type) {
-  if (is_at_end())
-    return std::unexpected(ParseError::UnexpectedEOF);
-  if (!expect(type))
-    return std::unexpected(ParseError::UnexpectedToken);
-  return m_token_stream[current++];
-}
-
-/**
- * @brief checks for end of token stream.
- *
- * @return true if end is reached, false otherwise.
- */
-bool Parser::is_at_end() { return peek().type == TokenType::END_OF_FILE; }
-
-/**
- * @brief peak at next token in token stream
- *
- * @return the next token without incrementing current token
- */
-Token Parser::peek() { return m_token_stream[current]; }
-
-/**
- * @brief peak at token after the next token
- *
- * @return the token after the next in the token stream without increasing
- * current
- */
-Token Parser::look_ahead() { return m_token_stream[current + 1]; }
-
-/**
- * @brief Determines visibility
- *
- * Visibility modifiers are optional. If excluded, visibility
- * defaults to private.
- *
- * @return visibility modifier
- */
-VisMod Parser::get_visibility() {
-  auto pub = consume(TokenType::PUB);
-  if (pub)
-    return VisMod::PUB;
-
-  // PRIV keyword is optional, so must be checked for. Does not cause failure if
-  // not there.
-  auto priv = consume(TokenType::PRIV); // Must appease clang-tidy
-  return VisMod::PRIV;
-}
-
-/**
- * @brief Determines ownership
- *
- * Ownership modifiers are optional keywords. If excluded, ownership
- * will default to OWNED
- *
- * @return ownership modifier
- */
-OwnershipMod Parser::get_ownership() {
-  static constexpr TokenType tokens[] = {TokenType::REF, TokenType::SHARED,
-                                         TokenType::CONST, TokenType::OWNED};
-
-  for (TokenType token : tokens) {
-    if (consume(token))
-      return convert_ownership(token);
-  }
-  return OwnershipMod::OWNED;
-}
-
-/**
- * @brief Determines type
- *
- * @return Type
- */
-std::expected<Type, ParseError> Parser::get_type() {
-  static constexpr TokenType types[] = {
-      TokenType::I8,   TokenType::I16,    TokenType::I32,  TokenType::I64,
-      TokenType::U8,   TokenType::U16,    TokenType::U32,  TokenType::U64,
-      TokenType::BOOL, TokenType::STRING, TokenType::CHAR, TokenType::FLOAT,
-      TokenType::VOID};
-
-  for (TokenType token : types) {
-    if (consume(token))
-      return convert_type(token);
-  }
-
-  if (consume(TokenType::END_OF_FILE))
-    return std::unexpected(ParseError::UnexpectedEOF);
-  return std::unexpected(ParseError::UnexpectedToken);
-}
-
-/**
- * @brief determines AssignOp from TokenType
- *
- * @return AssignOp, unexpected if failure
- */
-std::expected<AssignOp, ParseError> Parser::get_assign_op() {
-  static constexpr TokenType assign_types[] = {
-      TokenType::ASSIGN, TokenType::PLUS_EQUALS, TokenType::MINUS_EQUALS,
-      TokenType::MULT_EQUALS, TokenType::DIVIDE_EQUALS};
-
-  for (TokenType token : assign_types) {
-    if (consume(token))
-      return convert_assign(token);
-  }
-
-  if (peek().type == TokenType::END_OF_FILE)
-    return std::unexpected(ParseError::UnexpectedEOF);
-  return std::unexpected(ParseError::UnexpectedToken);
-}
-
-/**
- * @brief get comparative operator
- *
- * @return BinaryOp for comparative operation
- */
-std::expected<BinaryOp, ParseError> Parser::get_compare_op() {
-  static constexpr TokenType types[] = {
-      TokenType::EQUAL,       TokenType::NOT_EQUAL, TokenType::GREAT,
-      TokenType::GREAT_EQUAL, TokenType::LESS,      TokenType::LESS_EQUAL};
-
-  for (TokenType type : types) {
-    if (consume(type))
-      return convert_binary(type);
-  }
-
-  if (peek().type == TokenType::END_OF_FILE)
-    return std::unexpected(ParseError::UnexpectedEOF);
-  return std::unexpected(ParseError::UnexpectedToken);
-}
-
-/**
- * @brief get binary operations
- *
- * @params
- * token (TokenType): The type of token from which we will determine the binary
- *                    operator
- *
- * @return BinaryOp that matches the token param
- */
-std::expected<BinaryOp, ParseError> Parser::get_binary_op(TokenType token) {
-  auto op = consume(token);
-  if (!op)
-    return std::unexpected(op.error());
-
-  return convert_binary(token);
-}
 
 /**
  * @brief forward facing method to begin parsing process
@@ -1516,18 +1340,30 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_expression() {
   auto left = parse_or_expression();
   if (!left)
     return std::unexpected(left.error());
-
   auto op = get_compare_op();
-  if (!op)
-    return left;
-  auto compare_op = std::make_unique<BinaryExpr>(peek().loc);
-  compare_op->left = std::move(*left);
-  compare_op->op = *op;
+  while (op) {
+    auto right = parse_or_expression();
+    if (!right)
+      return std::unexpected(right.error());
+    left = make_comp_node(std::move(*left), std::move(*right), *op);
+    op = get_compare_op();
+  }
 
-  auto right = parse_or_expression();
-  if (!right)
-    return std::unexpected(right.error());
-  compare_op->right = std::move(*right);
+  return left;
+}
 
-  return compare_op;
+/**
+ * @brief parse or expression
+ *
+ * @astfields
+ * left (AST):    expression from the left side of the binary operation. can be
+ *                alone
+ * op (BinaryOp): Operator for the binary expression. optional
+ * left (AST):    expression from the right side of the binary operation. must
+ *                exist if operator exists
+ *
+ * @return AST expression node
+ */
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_or_expression() {
+  return std::unexpected(ParseError::UnexpectedEOF);
 }

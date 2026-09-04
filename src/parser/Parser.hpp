@@ -3,6 +3,7 @@
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
 #include "tools/AssignOp.hpp"
+#include "tools/BinaryOp.hpp"
 #include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
 #include "tools/VisMod.hpp"
@@ -30,9 +31,10 @@ private:
   OwnershipMod get_ownership();
   std::expected<Type, ParseError> get_type();
   std::expected<AssignOp, ParseError> get_assign_op();
-  std::expected<BinaryOp, ParseError> get_compare_op();
-  std::expected<BinaryOp, ParseError> get_binary_op(TokenType token);
-  std::expected<std::unique_ptr<AST>, ParseError> handle_error();
+  std::optional<BinaryOp> get_compare_op();
+  std::optional<BinaryOp> get_binary_op(TokenType token);
+  std::unique_ptr<AST> make_comp_node(std::unique_ptr<AST> left,
+                                      std::unique_ptr<AST> right, BinaryOp op);
 
   std::expected<std::unique_ptr<AST>, ParseError> parse_program();
   std::expected<std::unique_ptr<AST>, ParseError> parse_top_level_decl();
