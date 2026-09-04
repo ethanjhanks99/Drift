@@ -230,21 +230,29 @@ struct Assignment : AST {
 
 struct Return : AST {
   std::unique_ptr<AST> return_value;
+
+  Return(SourceLocation loc) : AST(NodeType::RETURN_STATE, loc) {}
 };
 
 struct Break : AST {
   std::unique_ptr<AST> break_value;
+
+  Break(SourceLocation loc) : AST(NodeType::BREAK_STATE, loc) {}
 };
 
 struct BinaryExpr : AST {
   BinaryOp op;
   std::unique_ptr<AST> left;
   std::unique_ptr<AST> right;
+
+  BinaryExpr(SourceLocation loc) : AST(NodeType::BINARY_EXPR, loc) {}
 };
 
 struct UnaryExpr : AST {
   UnaryOp op;
   std::unique_ptr<AST> operand;
+
+  UnaryExpr(SourceLocation loc) : AST(NodeType::UNARY_EXPR, loc) {}
 };
 
 struct Mutable : AST {
@@ -252,10 +260,14 @@ struct Mutable : AST {
   std::unique_ptr<AST> array_access;
   std::unique_ptr<AST> point_access;
   Type type;
+
+  Mutable(SourceLocation loc) : AST(NodeType::MUTABLE, loc) {}
 };
 
 struct Immutable : AST {
   std::unique_ptr<AST> value;
+
+  Immutable(SourceLocation loc) : AST(NodeType::EXPRESSION, loc) {}
 };
 
 struct Call : AST {
@@ -263,4 +275,6 @@ struct Call : AST {
   std::unique_ptr<AST> impl_access;
   std::vector<std::unique_ptr<AST>> args;
   std::string name;
+
+  Call(SourceLocation loc) : AST(NodeType::CALL, loc) {}
 };

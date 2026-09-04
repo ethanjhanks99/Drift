@@ -1417,3 +1417,25 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_assignment() {
 
   return assign;
 }
+
+/**
+ * @brief parse return statement
+ *
+ * @astfields
+ * return_value (AST): value to be returned as an expression AST node
+ *
+ * @return return statement AST node
+ */
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_return_statement() {
+  if (auto ret = consume(TokenType::RETURN); !ret)
+    return std::unexpected(ret.error());
+
+  auto return_stmt = std::make_unique<Return>(peek().loc);
+
+  auto ret_value = parse_expression();
+  if (ret_value)
+    return_stmt->return_value = std::move(*ret_value);
+
+  return return_stmt;
+}
