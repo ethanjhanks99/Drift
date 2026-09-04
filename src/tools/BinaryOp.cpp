@@ -1,45 +1,43 @@
 #include "tools/BinaryOp.hpp"
 
-#include <string>
-
-BinaryOp convert_binary(std::string lexeme) {
-  if (lexeme == "+")
+BinaryOp convert_binary(TokenType token) {
+  if (token == TokenType::PLUS)
     return BinaryOp::ADD;
-  if (lexeme == "-")
+  if (token == TokenType::MINUS)
     return BinaryOp::SUB;
-  if (lexeme == "*")
+  if (token == TokenType::STAR)
     return BinaryOp::MULT;
-  if (lexeme == "/")
+  if (token == TokenType::SLASH)
     return BinaryOp::DIV;
-  if (lexeme == "**")
+  if (token == TokenType::POWER)
     return BinaryOp::POW;
-  if (lexeme == "%")
+  if (token == TokenType::MODULO)
     return BinaryOp::MOD;
-  if (lexeme == "<<")
+  if (token == TokenType::LBIT_SHIFT)
     return BinaryOp::LSHIFT;
-  if (lexeme == ">>")
+  if (token == TokenType::RBIT_SHIFT)
     return BinaryOp::RSHIFT;
-  if (lexeme == "&&")
+  if (token == TokenType::AND)
     return BinaryOp::AND;
-  if (lexeme == "||")
+  if (token == TokenType::OR)
     return BinaryOp::OR;
-  if (lexeme == ">")
+  if (token == TokenType::GREAT)
     return BinaryOp::GREAT;
-  if (lexeme == ">=")
+  if (token == TokenType::GREAT_EQUAL)
     return BinaryOp::GREAT_EQUAL;
-  if (lexeme == "<")
+  if (token == TokenType::LESS)
     return BinaryOp::LESS;
-  if (lexeme == "<=")
+  if (token == TokenType::LESS_EQUAL)
     return BinaryOp::LESS_EQUAL;
-  if (lexeme == "!=")
+  if (token == TokenType::NOT_EQUAL)
     return BinaryOp::NOT_EQUAL;
-  if (lexeme == "==")
+  if (token == TokenType::EQUAL)
     return BinaryOp::EQUAL;
-  if (lexeme == "^")
+  if (token == TokenType::BIT_XOR)
     return BinaryOp::XOR;
-  if (lexeme == "&")
+  if (token == TokenType::BIT_AND)
     return BinaryOp::BAND;
-  if (lexeme == "|")
+  if (token == TokenType::BIT_OR)
     return BinaryOp::BOR;
 
   return BinaryOp::ERROR;

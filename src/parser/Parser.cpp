@@ -3,6 +3,7 @@
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
 #include "tools/AssignOp.hpp"
+#include "tools/BinaryOp.hpp"
 #include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
 #include "tools/SourceLocation.hpp"
@@ -146,6 +147,43 @@ std::expected<AssignOp, ParseError> Parser::get_assign_op() {
   if (peek().type == TokenType::END_OF_FILE)
     return std::unexpected(ParseError::UnexpectedEOF);
   return std::unexpected(ParseError::UnexpectedToken);
+}
+
+/**
+ * @brief get comparative operator
+ *
+ * @return BinaryOp for comparative operation
+ */
+std::expected<BinaryOp, ParseError> Parser::get_compare_op() {
+  static constexpr TokenType types[] = {
+      TokenType::EQUAL,       TokenType::NOT_EQUAL, TokenType::GREAT,
+      TokenType::GREAT_EQUAL, TokenType::LESS,      TokenType::LESS_EQUAL};
+
+  for (TokenType type : types) {
+    if (consume(type))
+      return convert_binary(type);
+  }
+
+  if (peek().type == TokenType::END_OF_FILE)
+    return std::unexpected(ParseError::UnexpectedEOF);
+  return std::unexpected(ParseError::UnexpectedToken);
+}
+
+/**
+ * @brief get binary operations
+ *
+ * @params
+ * token (TokenType): The type of token from which we will determine the binary
+ *                    operator
+ *
+ * @return BinaryOp that matches the token param
+ */
+std::expected<BinaryOp, ParseError> Parser::get_binary_op(TokenType token) {
+  auto op = consume(token);
+  if (!op)
+    return std::unexpected(op.error());
+
+  return convert_binary(token);
 }
 
 /**
@@ -1372,6 +1410,9 @@ Parser::parse_simple_statement() {
     decl = std::move(*parse_return_statement());
     break;
   case TokenType::CONTINUE:
+    decl = std::make_unique<Continue>(peek().loc);
+    if (auto keyword = consume(TokenType::CONTINUE); !keyword)
+      return std::unexpected(keyword.error());
     break;
   case TokenType::BREAK:
     decl = std::move(*parse_break_statement());
@@ -1428,14 +1469,65 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_assignment() {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_return_statement() {
-  if (auto ret = consume(TokenType::RETURN); !ret)
-    return std::unexpected(ret.error());
+  if (auto keyword = consume(TokenType::RETURN); !keyword)
+    return std::unexpected(keyword.error());
 
-  auto return_stmt = std::make_unique<Return>(peek().loc);
+  auto ret_stmt = std::make_unique<Return>(peek().loc);
 
   auto ret_value = parse_expression();
   if (ret_value)
-    return_stmt->return_value = std::move(*ret_value);
+    ret_stmt->return_value = std::move(*ret_value);
 
-  return return_stmt;
+  return ret_stmt;
+}
+
+/**
+ * @brief parse break statement
+ * Break statements in drift allow a follow-up expression for improved error
+ * handling. When a value is provided, it's shared outside of the broken loop
+ *
+ * @astfields
+ * break_value value to be carried outside loop
+ *
+ * @return break statement AST node
+ */
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_break_statement() {
+  if (auto keyword = consume(TokenType::BREAK); !keyword)
+    return std::unexpected(keyword.error());
+
+  auto break_stmt = std::make_unique<Break>(peek().loc);
+
+  auto break_value = parse_expression();
+  if (break_value)
+    break_stmt->break_value = std::move(*break_value);
+
+  return break_stmt;
+}
+
+/**
+ * @brief parse expression
+ * Here begins the order of operations
+ *
+ * @return AST node representing the head of the exression. Could only have one
+ * node
+ */
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_expression() {
+  auto left = parse_or_expression();
+  if (!left)
+    return std::unexpected(left.error());
+
+  auto op = get_compare_op();
+  if (!op)
+    return left;
+  auto compare_op = std::make_unique<BinaryExpr>(peek().loc);
+  compare_op->left = std::move(*left);
+  compare_op->op = *op;
+
+  auto right = parse_or_expression();
+  if (!right)
+    return std::unexpected(right.error());
+  compare_op->right = std::move(*right);
+
+  return compare_op;
 }

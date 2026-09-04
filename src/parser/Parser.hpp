@@ -30,6 +30,8 @@ private:
   OwnershipMod get_ownership();
   std::expected<Type, ParseError> get_type();
   std::expected<AssignOp, ParseError> get_assign_op();
+  std::expected<BinaryOp, ParseError> get_compare_op();
+  std::expected<BinaryOp, ParseError> get_binary_op(TokenType token);
   std::expected<std::unique_ptr<AST>, ParseError> handle_error();
 
   std::expected<std::unique_ptr<AST>, ParseError> parse_program();

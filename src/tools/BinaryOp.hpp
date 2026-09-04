@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "lexer/Token.hpp"
 
 enum class BinaryOp {
   ADD,
@@ -25,4 +25,4 @@ enum class BinaryOp {
   ERROR
 };
 
-BinaryOp convert_binary(std::string lexeme);
+BinaryOp convert_binary(TokenType token);

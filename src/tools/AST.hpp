@@ -234,6 +234,10 @@ struct Return : AST {
   Return(SourceLocation loc) : AST(NodeType::RETURN_STATE, loc) {}
 };
 
+struct Continue : AST {
+  Continue(SourceLocation loc) : AST(NodeType::CONTINUE_STATE, loc) {}
+};
+
 struct Break : AST {
   std::unique_ptr<AST> break_value;
 
