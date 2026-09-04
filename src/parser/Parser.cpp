@@ -5,6 +5,7 @@
 #include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
 #include "tools/SourceLocation.hpp"
+#include <cmath>
 #include <expected>
 #include <memory>
 #include <utility>
@@ -1345,7 +1346,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_expression() {
     auto right = parse_or_expression();
     if (!right)
       return std::unexpected(right.error());
-    left = make_comp_node(std::move(*left), std::move(*right), *op);
+    left = make_binary_node(std::move(*left), std::move(*right), *op);
     op = get_compare_op();
   }
 
@@ -1365,5 +1366,313 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_expression() {
  * @return AST expression node
  */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_or_expression() {
-  return std::unexpected(ParseError::UnexpectedEOF);
+  auto left = parse_and_expression();
+  if (!left)
+    return std::unexpected(left.error());
+  auto op = get_binary_op(TokenType::OR);
+  while (op) {
+    auto right = parse_and_expression();
+    if (!right)
+      return std::unexpected(right.error());
+    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    op = get_binary_op(TokenType::OR);
+  }
+
+  return left;
+}
+
+/**
+ * @brief parse and expression
+ *
+ * @astfields
+ * left (AST):    expression from the left side of the binary operation. can be
+ *                alone
+ * op (BinaryOp): Operator for the binary expression. optional
+ * left (AST):    expression from the right side of the binary operation. must
+ *                exist if operator exists
+ *
+ * @return AST expression node
+ */
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_and_expression() {
+  auto left = parse_bitor_expression();
+  if (!left)
+    return std::unexpected(left.error());
+  auto op = get_binary_op(TokenType::AND);
+  while (op) {
+    auto right = parse_bitor_expression();
+    if (!right)
+      return std::unexpected(right.error());
+    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    op = get_binary_op(TokenType::AND);
+  }
+
+  return left;
+}
+
+/**
+ * @brief parse bitwise or expression
+ *
+ * @astfields
+ * left (AST):    expression from the left side of the binary operation. can be
+ *                alone
+ * op (BinaryOp): Operator for the binary expression. optional
+ * left (AST):    expression from the right side of the binary operation. must
+ *                exist if operator exists
+ *
+ * @return AST expression node
+ */
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_bitor_expression() {
+  auto left = parse_bitx_expression();
+  if (!left)
+    return std::unexpected(left.error());
+  auto op = get_binary_op(TokenType::BIT_OR);
+  while (op) {
+    auto right = parse_bitx_expression();
+    if (!right)
+      return std::unexpected(right.error());
+    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    op = get_binary_op(TokenType::BIT_OR);
+  }
+
+  return left;
+}
+
+/**
+ * @brief parse bitwise xor expression
+ *
+ * @astfields
+ * left (AST):    expression from the left side of the binary operation. can be
+ *                alone
+ * op (BinaryOp): Operator for the binary expression. optional
+ * left (AST):    expression from the right side of the binary operation. must
+ *                exist if operator exists
+ *
+ * @return AST expression node
+ */
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_bitx_expression() {
+  auto left = parse_bitand_expression();
+  if (!left)
+    return std::unexpected(left.error());
+  auto op = get_binary_op(TokenType::BIT_XOR);
+  while (op) {
+    auto right = parse_bitand_expression();
+    if (!right)
+      return std::unexpected(right.error());
+    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    op = get_binary_op(TokenType::BIT_XOR);
+  }
+
+  return left;
+}
+
+/**
+ * @brief parse bitwise and expression
+ *
+ * @astfields
+ * left (AST):    expression from the left side of the binary operation. can be
+ *                alone
+ * op (BinaryOp): Operator for the binary expression. optional
+ * left (AST):    expression from the right side of the binary operation. must
+ *                exist if operator exists
+ *
+ * @return AST expression node
+ */
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_bitand_expression() {
+  auto left = parse_bitshift_expression();
+  if (!left)
+    return std::unexpected(left.error());
+  auto op = get_binary_op(TokenType::BIT_AND);
+  while (op) {
+    auto right = parse_bitshift_expression();
+    if (!right)
+      return std::unexpected(right.error());
+    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    op = get_binary_op(TokenType::BIT_AND);
+  }
+
+  return left;
+}
+
+/**
+ * @brief parse bit shift expression
+ *
+ * @astfields
+ * left (AST):    expression from the left side of the binary operation. can be
+ *                alone
+ * op (BinaryOp): Operator for the binary expression. optional
+ * left (AST):    expression from the right side of the binary operation. must
+ *                exist if operator exists
+ *
+ * @return AST expression node
+ */
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_bitshift_expression() {
+  auto left = parse_sum_expression();
+  if (!left)
+    return std::unexpected(left.error());
+  auto op = get_binary_op(TokenType::LBIT_SHIFT);
+  if (!op)
+    op = get_binary_op(TokenType::RBIT_SHIFT);
+  while (op) {
+    auto right = parse_sum_expression();
+    if (!right)
+      return std::unexpected(right.error());
+    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    op = get_binary_op(TokenType::LBIT_SHIFT);
+    if (!op)
+      op = get_binary_op(TokenType::RBIT_SHIFT);
+  }
+
+  return left;
+}
+
+/**
+ * @brief parse sum expression
+ *
+ * @astfields
+ * left (AST):    expression from the left side of the binary operation. can be
+ *                alone
+ * op (BinaryOp): Operator for the binary expression. optional
+ * left (AST):    expression from the right side of the binary operation. must
+ *                exist if operator exists
+ *
+ * @return AST expression node
+ */
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_sum_expression() {
+  auto left = parse_mult_expression();
+  if (!left)
+    return std::unexpected(left.error());
+  auto op = get_binary_op(TokenType::PLUS);
+  if (!op)
+    op = get_binary_op(TokenType::MINUS);
+  while (op) {
+    auto right = parse_mult_expression();
+    if (!right)
+      return std::unexpected(right.error());
+    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    op = get_binary_op(TokenType::PLUS);
+    if (!op)
+      get_binary_op(TokenType::MINUS);
+  }
+
+  return left;
+}
+
+/**
+ * @brief parse mult expression
+ *
+ * @astfields
+ * left (AST):    expression from the left side of the binary operation. can be
+ *                alone
+ * op (BinaryOp): Operator for the binary expression. optional
+ * left (AST):    expression from the right side of the binary operation. must
+ *                exist if operator exists
+ *
+ * @return AST expression node
+ */
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_mult_expression() {
+  auto left = parse_unary_expression();
+  if (!left)
+    return std::unexpected(left.error());
+  auto op = get_binary_op(TokenType::STAR);
+  if (!op)
+    op = get_binary_op(TokenType::SLASH);
+  if (!op)
+    op = get_binary_op(TokenType::MODULO);
+  while (op) {
+    auto right = parse_unary_expression();
+    if (!right)
+      return std::unexpected(right.error());
+    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    op = get_binary_op(TokenType::STAR);
+    if (!op)
+      op = get_binary_op(TokenType::SLASH);
+    if (!op)
+      op = get_binary_op(TokenType::MODULO);
+  }
+
+  return left;
+}
+
+/**
+ * @brief parse unary expression
+ *
+ * @astfields
+ * operand (AST):     expression
+ * op (UnaryOp):      Operator for the unary expression. optional
+ * prefix (boolean):  determines if post or prefix unary expression
+ *
+ * @return AST expression node
+ */
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_unary_expression() {
+  auto op = get_pre_unary_op();
+  auto operand = parse_post_unary_expression();
+  if (!op)
+    return operand;
+
+  operand = make_unary_node(std::move(*operand), *op, true);
+  return operand;
+}
+
+/**
+ * @brief parse post unary expression
+ *
+ * @astfields
+ * operand (AST):     expression
+ * op (UnaryOp):      operator for the unary expression. optional
+ * prefix (boolean):  determins if post or prefix unary expression
+ *
+ * @return AST expression node
+ */
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_post_unary_expression() {
+  auto operand = parse_power_expression();
+  auto op = get_post_unary_op();
+  if (!op)
+    return operand;
+
+  operand = make_unary_node(std::move(*operand), *op, false);
+  return operand;
+}
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_power_expression() {
+  auto left = parse_paren_expression();
+  if (!left)
+    return std::unexpected(left.error());
+  auto op = get_binary_op(TokenType::POWER);
+  if (!op)
+    return left;
+  auto right = parse_power_expression();
+  if (!right)
+    return std::unexpected(right.error());
+
+  return make_binary_node(std::move(*left), std::move(*right), *op);
+}
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_paren_expression() {
+  if (consume(TokenType::LPAREN)) {
+    auto expression = parse_expression();
+    if (auto paren = consume(TokenType::RPAREN); !paren)
+      return std::unexpected(paren.error());
+    return expression;
+  }
+
+  auto expression = parse_mutable();
+  if (!expression)
+    expression = parse_immutable();
+  if (!expression)
+    expression = parse_enum_construction();
+  if (!expression)
+    expression = parse_function_call();
+  if (!expression)
+    return std::unexpected(expression.error());
+
+  return expression;
 }

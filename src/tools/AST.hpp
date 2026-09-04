@@ -255,6 +255,7 @@ struct BinaryExpr : AST {
 struct UnaryExpr : AST {
   UnaryOp op;
   std::unique_ptr<AST> operand;
+  bool prefix;
 
   UnaryExpr(SourceLocation loc) : AST(NodeType::UNARY_EXPR, loc) {}
 };

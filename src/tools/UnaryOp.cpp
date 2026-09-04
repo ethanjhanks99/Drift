@@ -1,19 +1,18 @@
 #include "UnaryOp.hpp"
+#include "lexer/Token.hpp"
 
-#include <string>
-
-UnaryOp convert_unary(std::string lexeme) {
-  if (lexeme == "!")
+UnaryOp convert_unary(TokenType token) {
+  if (token == TokenType::NOT)
     return UnaryOp::NOT;
-  if (lexeme == "~")
+  if (token == TokenType::BIT_NOT)
     return UnaryOp::BNOT;
-  if (lexeme == "++")
+  if (token == TokenType::PLUS_PLUS)
     return UnaryOp::PPLUS;
-  if (lexeme == "--")
+  if (token == TokenType::MINUS_MINUS)
     return UnaryOp::SSUB;
-  if (lexeme == "-")
+  if (token == TokenType::MINUS)
     return UnaryOp::NEG;
-  if (lexeme == "?")
+  if (token == TokenType::QMARK)
     return UnaryOp::QMARK;
 
   return UnaryOp::ERROR;

@@ -6,9 +6,11 @@
 #include "tools/BinaryOp.hpp"
 #include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
+#include "tools/UnaryOp.hpp"
 #include "tools/VisMod.hpp"
 #include <expected>
 #include <memory>
+#include <optional>
 #include <vector>
 
 class Parser {
@@ -33,8 +35,13 @@ private:
   std::expected<AssignOp, ParseError> get_assign_op();
   std::optional<BinaryOp> get_compare_op();
   std::optional<BinaryOp> get_binary_op(TokenType token);
-  std::unique_ptr<AST> make_comp_node(std::unique_ptr<AST> left,
-                                      std::unique_ptr<AST> right, BinaryOp op);
+  std::optional<UnaryOp> get_pre_unary_op();
+  std::optional<UnaryOp> get_post_unary_op();
+  std::unique_ptr<AST> make_binary_node(std::unique_ptr<AST> left,
+                                        std::unique_ptr<AST> right,
+                                        BinaryOp op);
+  std::unique_ptr<AST> make_unary_node(std::unique_ptr<AST> operand, UnaryOp op,
+                                       bool prefix);
 
   std::expected<std::unique_ptr<AST>, ParseError> parse_program();
   std::expected<std::unique_ptr<AST>, ParseError> parse_top_level_decl();
@@ -115,6 +122,7 @@ private:
   std::expected<std::unique_ptr<AST>, ParseError> parse_generic_definition();
   std::expected<std::unique_ptr<AST>, ParseError> parse_generic_type();
   std::expected<std::unique_ptr<AST>, ParseError> parse_mutable();
+  std::expected<std::unique_ptr<AST>, ParseError> parse_immutable();
   std::expected<std::unique_ptr<AST>, ParseError> parse_array_access();
   std::expected<std::unique_ptr<AST>, ParseError> parse_point_access();
 };
