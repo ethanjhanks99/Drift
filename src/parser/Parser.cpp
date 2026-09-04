@@ -111,7 +111,7 @@ OwnershipMod Parser::get_ownership() {
  *
  * @return Type
  */
-Type Parser::get_type() {
+std::expected<Type, ParseError> Parser::get_type() {
   static constexpr TokenType types[] = {
       TokenType::I8,   TokenType::I16,    TokenType::I32,  TokenType::I64,
       TokenType::U8,   TokenType::U16,    TokenType::U32,  TokenType::U64,
@@ -123,7 +123,9 @@ Type Parser::get_type() {
       return convert_type(token);
   }
 
-  return Type::ERROR;
+  if (consume(TokenType::END_OF_FILE))
+    return std::unexpected(ParseError::UnexpectedEOF);
+  return std::unexpected(ParseError::UnexpectedToken);
 }
 
 /**
@@ -398,11 +400,11 @@ Parser::parse_function_return() {
   OwnershipMod owner = get_ownership();
   ret->ownership = owner;
 
-  Type ret_type = get_type();
+  auto ret_type = get_type();
 
-  if (ret_type == Type::ERROR)
+  if (!ret_type)
     return std::unexpected(ParseError::UnexpectedToken);
-  ret->type = ret_type;
+  ret->type = *ret_type;
 
   return ret;
 }
@@ -467,10 +469,10 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
   if (auto colon = consume(TokenType::COLON); !colon)
     return std::unexpected(colon.error());
 
-  Type param_type = get_type();
-  if (param_type == Type::ERROR)
+  auto param_type = get_type();
+  if (!param_type)
     return std::unexpected(ParseError::UnexpectedToken);
-  param->type = param_type;
+  param->type = *param_type;
 
   return param;
 }
@@ -586,10 +588,10 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_struct_field() {
   if (auto colon = consume(TokenType::COLON); !colon)
     return std::unexpected(colon.error());
 
-  Type type = get_type();
-  if (type == Type::ERROR)
+  auto type = get_type();
+  if (!type)
     return std::unexpected(ParseError::UnexpectedEOF);
-  field->type = type;
+  field->type = *type;
 
   return field;
 }
@@ -708,10 +710,10 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_field() {
   if (auto colon = consume(TokenType::COLON); !colon)
     return std::unexpected(colon.error());
 
-  Type type = get_type();
-  if (type == Type::ERROR)
+  auto type = get_type();
+  if (!type)
     return std::unexpected(ParseError::UnexpectedToken);
-  field->type = type;
+  field->type = *type;
 
   return field;
 }
@@ -924,11 +926,11 @@ Parser::parse_variable_declaration() {
     return std::unexpected(array_decl.error());
   decl->array_size = std::move(*array_decl);
 
-  Type var_type = get_type();
-  if (var_type == Type::ERROR)
+  auto var_type = get_type();
+  if (!var_type)
     return std::unexpected(ParseError::UnexpectedToken);
 
-  decl->type = var_type;
+  decl->type = *var_type;
 
   return decl;
 }
@@ -1352,8 +1354,19 @@ Parser::parse_simple_statement() {
   case TokenType::IDENTIFIER:
     if (look_ahead().type == TokenType::COLON)
       decl = std::move(*parse_variable_definition());
-    else if (look_ahead().type == TokenType::ASSIGN)
-      decl = std::move(*parse_assignment());
+    else {
+      switch (look_ahead().type) {
+      case TokenType::ASSIGN:
+      case TokenType::PLUS_EQUALS:
+      case TokenType::MINUS_EQUALS:
+      case TokenType::MULT_EQUALS:
+      case TokenType::DIVIDE_EQUALS:
+        decl = std::move(*parse_assignment());
+        break;
+      default:
+        break;
+      }
+    }
     break;
   case TokenType::RETURN:
     decl = std::move(*parse_return_statement());
