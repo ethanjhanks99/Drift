@@ -294,30 +294,22 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_struct_definition(VisMod vis_mod) {
-  auto strct = std::make_unique<StructDef>(peek().loc);
-
-  strct->vis_mod = get_visibility();
-
-  if (auto keyword = consume(TokenType::STRUCT); !keyword)
-    return std::unexpected(keyword.error());
+  SourceLocation loc = peek().loc;
 
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
 
-  strct->name = name->lexeme;
-
   auto gen_dec = parse_generic_declaration();
   if (!gen_dec)
     return std::unexpected(gen_dec.error());
-  strct->generics = std::move(*gen_dec);
 
   auto fields = parse_struct_block();
   if (!fields)
     return std::unexpected(fields.error());
-  strct->fields = std::move(*fields);
 
-  return strct;
+  return make_struct_node(loc, vis_mod, name->lexeme, std::move(*gen_dec),
+                          std::move(*fields));
 }
 
 /**

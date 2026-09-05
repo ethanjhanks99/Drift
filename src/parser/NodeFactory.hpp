@@ -30,3 +30,7 @@ std::unique_ptr<AST> make_function_return_node(SourceLocation loc,
 std::unique_ptr<AST> make_param_node(SourceLocation loc, OwnershipMod ownership,
                                      std::string name, bool is_array,
                                      Type type);
+std::unique_ptr<AST>
+make_struct_node(SourceLocation loc, VisMod vis_mod, std::string name,
+                 std::vector<std::unique_ptr<AST>> generics,
+                 std::vector<std::unique_ptr<AST>> fields);
