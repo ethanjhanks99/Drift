@@ -6,6 +6,7 @@
 #include "tools/Type.hpp"
 #include "tools/VisMod.hpp"
 #include <memory>
+#include <string>
 #include <vector>
 
 std::unique_ptr<AST> make_program_node(SourceLocation loc,
@@ -34,3 +35,26 @@ std::unique_ptr<AST>
 make_struct_node(SourceLocation loc, VisMod vis_mod, std::string name,
                  std::vector<std::unique_ptr<AST>> generics,
                  std::vector<std::unique_ptr<AST>> fields);
+std::unique_ptr<AST> make_struct_field_node(SourceLocation loc, VisMod vis_mod,
+                                            OwnershipMod ownership,
+                                            std::string name, bool is_array,
+                                            Type type);
+std::unique_ptr<AST>
+make_enum_node(SourceLocation loc, VisMod vis_mod, std::string name,
+               std::vector<std::unique_ptr<AST>> generics,
+               std::vector<std::unique_ptr<AST>> enum_vals);
+std::unique_ptr<AST>
+make_enum_value_node(SourceLocation loc, std::string name,
+                     std::vector<std::unique_ptr<AST>> fields);
+std::unique_ptr<AST> make_value_field_node(SourceLocation loc, std::string name,
+                                           Type type);
+std::unique_ptr<AST> make_trait_node(SourceLocation loc, VisMod vis_mod,
+                                     std::string name,
+                                     std::unique_ptr<AST> inherits,
+                                     std::vector<std::unique_ptr<AST>> body);
+std::unique_ptr<AST> make_impl_node(SourceLocation loc, VisMod vis_mod,
+                                    std::string struct_name,
+                                    std::string trait_name,
+                                    std::vector<std::unique_ptr<AST>> generics,
+                                    std::vector<std::unique_ptr<AST>> block,
+                                    bool with_trait);

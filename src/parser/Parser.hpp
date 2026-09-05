@@ -6,6 +6,7 @@
 #include "tools/BinaryOp.hpp"
 #include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
+#include "tools/SourceLocation.hpp"
 #include "tools/UnaryOp.hpp"
 #include "tools/VisMod.hpp"
 #include <expected>
@@ -29,6 +30,7 @@ private:
   bool is_at_end();
   Token peek();
   Token look_ahead();
+  SourceLocation get_loc();
   VisMod get_visibility();
   OwnershipMod get_ownership();
   std::expected<Type, ParseError> get_type();

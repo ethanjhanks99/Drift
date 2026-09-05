@@ -1,5 +1,6 @@
 #include "Parser.hpp"
 #include "NodeFactory.hpp"
+#include "build/_deps/catch2-src/src/catch2/internal/catch_meta.hpp"
 #include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
@@ -20,6 +21,7 @@
 std::unique_ptr<AST> Parser::parse() { return parse_program().value(); }
 
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_program() {
+  SourceLocation loc = get_loc();
   std::vector<std::unique_ptr<AST>> decls;
   while (!is_at_end()) {
     auto top = parse_top_level_decl();
@@ -29,7 +31,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_program() {
     decls.push_back(std::move(*top));
   }
 
-  return make_program_node(decls[0]->loc, std::move(decls));
+  return make_program_node(loc, std::move(decls));
 }
 
 /**
@@ -86,16 +88,12 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_top_level_decl() {
  * @return import statement node
  */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_import() {
-  // Guaranteed to have the keyword if made to this point, but clang-tidy gets
-  // mad
-  if (auto keyword = consume(TokenType::IMPORT); !keyword)
-    return std::unexpected(keyword.error());
-
+  SourceLocation loc = get_loc();
   auto import_name = consume(TokenType::IDENTIFIER);
   if (!import_name)
     return std::unexpected(import_name.error());
 
-  return make_import_node(import_name->loc, import_name->lexeme);
+  return make_import_node(loc, import_name->lexeme);
 }
 
 /**
@@ -114,6 +112,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_import() {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_function_definition(VisMod vis_mod) {
+  SourceLocation loc = get_loc();
   std::vector<std::unique_ptr<AST>> attributes;
   auto att = consume(TokenType::ATTRIBUTE);
   while (att) {
@@ -147,10 +146,9 @@ Parser::parse_function_definition(VisMod vis_mod) {
   if (!block)
     return std::unexpected(block.error());
 
-  return make_func_def_node(keyword->loc, std::move(attributes), vis_mod,
-                            name->lexeme, std::move(*gen_dec),
-                            std::move(*param_list), std::move(*ret),
-                            std::move(*block));
+  return make_func_def_node(loc, std::move(attributes), vis_mod, name->lexeme,
+                            std::move(*gen_dec), std::move(*param_list),
+                            std::move(*ret), std::move(*block));
 }
 
 /**
@@ -167,6 +165,7 @@ Parser::parse_function_definition(VisMod vis_mod) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_function_declaration(VisMod vis_mod) {
+  SourceLocation loc = get_loc();
   auto func = consume(TokenType::FUNC);
   if (!func)
     return std::unexpected(func.error());
@@ -187,8 +186,8 @@ Parser::parse_function_declaration(VisMod vis_mod) {
   if (!function_return)
     return std::unexpected(function_return.error());
 
-  return make_func_decl_node(func->loc, vis_mod, name->lexeme,
-                             std::move(*gen_dec), std::move(*param_list),
+  return make_func_decl_node(loc, vis_mod, name->lexeme, std::move(*gen_dec),
+                             std::move(*param_list),
                              std::move(*function_return));
 }
 
@@ -203,6 +202,7 @@ Parser::parse_function_declaration(VisMod vis_mod) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_function_return() {
+  SourceLocation loc = get_loc();
   auto point = consume(TokenType::RETURN_POINT);
   if (!point)
     return std::unexpected(point.error());
@@ -214,7 +214,7 @@ Parser::parse_function_return() {
   if (!ret_type)
     return std::unexpected(ParseError::UnexpectedToken);
 
-  return make_function_return_node(point->loc, owner, *ret_type);
+  return make_function_return_node(loc, owner, *ret_type);
 }
 
 /**
@@ -258,8 +258,7 @@ Parser::parse_param_list() {
  * @return a param AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
-  auto param = std::make_unique<Param>(peek().loc);
-
+  SourceLocation loc = get_loc();
   OwnershipMod owner = get_ownership();
 
   auto name = consume(TokenType::IDENTIFIER);
@@ -278,7 +277,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
   if (!param_type)
     return std::unexpected(ParseError::UnexpectedToken);
 
-  return make_param_node(name->loc, owner, name->lexeme, is_array, *param_type);
+  return make_param_node(loc, owner, name->lexeme, is_array, *param_type);
 }
 
 /**
@@ -364,19 +363,18 @@ Parser::parse_struct_fields() {
  * @return field AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_struct_field() {
-  auto field = std::make_unique<StructField>(peek().loc);
+  SourceLocation loc = get_loc();
 
-  field->vis_mod = get_visibility();
-  field->ownership = get_ownership();
+  auto vis_mod = get_visibility();
+  auto ownership = get_ownership();
 
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
-  field->name = name->lexeme;
 
-  field->is_array = false;
+  bool is_array = true;
   if (auto lbracket = consume(TokenType::LBRACKET); !lbracket) {
-    field->is_array = true;
+    is_array = false;
     if (auto rbracket = consume(TokenType::RBRACKET); !rbracket)
       return std::unexpected(rbracket.error());
   }
@@ -387,9 +385,9 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_struct_field() {
   auto type = get_type();
   if (!type)
     return std::unexpected(ParseError::UnexpectedEOF);
-  field->type = *type;
 
-  return field;
+  return make_struct_field_node(loc, vis_mod, ownership, name->lexeme, is_array,
+                                *type);
 }
 
 /**
@@ -405,29 +403,22 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_struct_field() {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_enum_definition(VisMod vis_mod) {
-  auto enm = std::make_unique<EnumDef>(peek().loc);
-
-  enm->vis_mod = get_visibility();
-
-  if (auto keyword = consume(TokenType::ENUM); !keyword)
-    return std::unexpected(keyword.error());
+  SourceLocation loc = get_loc();
 
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
-  enm->name = name->lexeme;
 
   auto gen_dec = parse_generic_declaration();
   if (!gen_dec)
     return std::unexpected(gen_dec.error());
-  enm->generics = std::move(*gen_dec);
 
   auto enum_values = parse_enum_block();
   if (!enum_values)
     return std::unexpected(enum_values.error());
-  enm->enum_vals = std::move(*enum_values);
 
-  return enm;
+  return make_enum_node(loc, vis_mod, name->lexeme, std::move(*gen_dec),
+                        std::move(*enum_values));
 }
 
 /**
@@ -464,26 +455,26 @@ Parser::parse_enum_block() {
  * @return enum value AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_value() {
-  auto value = std::make_unique<EnumValue>(peek().loc);
+  SourceLocation loc = get_loc();
 
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
-  value->name = name->lexeme;
 
+  std::vector<std::unique_ptr<AST>> fields;
   if (consume(TokenType::LBRACE)) {
     do {
       auto field = parse_enum_field();
       if (!field)
         return std::unexpected(field.error());
-      value->fields.push_back(std::move(*field));
+      fields.push_back(std::move(*field));
     } while (consume(TokenType::COMMA));
 
     if (auto brace = consume(TokenType::RBRACE); !brace)
       return std::unexpected(brace.error());
   }
 
-  return value;
+  return make_enum_value_node(loc, name->lexeme, std::move(fields));
 }
 
 /**
@@ -496,12 +487,11 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_value() {
  * @return an enum value field AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_field() {
-  auto field = std::make_unique<EnumField>(peek().loc);
+  SourceLocation loc = get_loc();
 
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
-  field->name = name->lexeme;
 
   if (auto colon = consume(TokenType::COLON); !colon)
     return std::unexpected(colon.error());
@@ -509,9 +499,8 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_field() {
   auto type = get_type();
   if (!type)
     return std::unexpected(ParseError::UnexpectedToken);
-  field->type = *type;
 
-  return field;
+  return make_value_field_node(loc, name->lexeme, *type);
 }
 
 /**
@@ -527,29 +516,25 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_field() {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_trait_definition(VisMod vis_mod) {
-  auto trait = std::make_unique<TraitDef>(peek().loc);
-  trait->vis_mod = get_visibility();
-
-  if (auto keyword = consume(TokenType::TRAIT); !keyword)
-    return std::unexpected(keyword.error());
+  SourceLocation loc = get_loc();
 
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
-  trait->name = name->lexeme;
 
-  auto inherits = parse_inherits();
-  if (!inherits && *inherits != nullptr)
-    return std::unexpected(inherits.error());
-  else
-    trait->inherits = std::move(*inherits);
+  std::expected<std::unique_ptr<AST>, ParseError> inherits;
+  if (consume(TokenType::COLON)) {
+    inherits = parse_inherits();
+    if (!inherits)
+      return std::unexpected(inherits.error());
+  }
 
   auto body = parse_trait_block();
   if (!body)
     return std::unexpected(body.error());
-  trait->block = std::move(*body);
 
-  return trait;
+  return make_trait_node(loc, vis_mod, name->lexeme, std::move(*inherits),
+                         std::move(*body));
 }
 
 /**
@@ -597,37 +582,35 @@ Parser::parse_trait_block() {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_impl_definition(VisMod vis_mod) {
-  auto impl = std::make_unique<ImplDef>(peek().loc);
+  SourceLocation loc = get_loc();
 
-  impl->vis_mod = get_visibility();
+  auto id_trait = consume(TokenType::IDENTIFIER);
+  if (!id_trait)
+    return std::unexpected(id_trait.error());
 
-  if (auto keyword = consume(TokenType::IMPL); !keyword)
-    return std::unexpected(keyword.error());
-
-  auto name = consume(TokenType::IDENTIFIER);
-  if (!name)
-    return std::unexpected(name.error());
-
+  bool with_trait = false;
   if (consume(TokenType::FOR)) {
-    impl->trait = name->lexeme;
-    auto name2 = consume(TokenType::IDENTIFIER);
-    if (!name2)
-      return std::unexpected(name2.error());
-    impl->name = name2->lexeme;
-  } else
-    impl->name = name->lexeme;
+    with_trait = true;
+  }
+  auto id_name = consume(TokenType::IDENTIFIER);
+  if (with_trait) {
+    if (!id_name)
+      return std::unexpected(id_name.error());
+  }
 
   auto generics = parse_generic_declaration();
   if (!generics)
     return std::unexpected(generics.error());
-  impl->generics = std::move(*generics);
 
   auto block = parse_impl_block();
   if (!block)
     return std::unexpected(block.error());
-  impl->impl_block = std::move(*block);
 
-  return impl;
+  if (with_trait)
+    return make_impl_node(loc, vis_mod, id_name->lexeme, id_trait->lexeme,
+                          std::move(*generics), std::move(*block), with_trait);
+  return make_impl_node(loc, vis_mod, id_trait->lexeme, id_trait->lexeme,
+                        std::move(*generics), std::move(*block), with_trait);
 }
 
 /**

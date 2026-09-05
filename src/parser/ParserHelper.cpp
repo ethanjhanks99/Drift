@@ -5,6 +5,7 @@
 #include "tools/BinaryOp.hpp"
 #include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
+#include "tools/SourceLocation.hpp"
 #include "tools/UnaryOp.hpp"
 #include "tools/VisMod.hpp"
 #include <expected>
@@ -67,6 +68,13 @@ Token Parser::peek() { return m_token_stream[current]; }
  * current
  */
 Token Parser::look_ahead() { return m_token_stream[current + 1]; }
+
+/**
+ * @brief get location
+ *
+ * @return SourceLocation
+ */
+SourceLocation Parser::get_loc() { return peek().loc; }
 
 /**
  * @brief Determines visibility
