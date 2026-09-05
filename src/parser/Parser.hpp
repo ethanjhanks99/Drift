@@ -45,17 +45,26 @@ private:
 
   std::expected<std::unique_ptr<AST>, ParseError> parse_program();
   std::expected<std::unique_ptr<AST>, ParseError> parse_top_level_decl();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_vismod();
   std::expected<std::unique_ptr<AST>, ParseError> parse_import();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_function_definition();
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_function_definition(VisMod vis_mod = VisMod::PRIV);
   std::expected<std::unique_ptr<AST>, ParseError> parse_function_return();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_function_declaration();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_struct_definition();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_enum_definition();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_trait_definition();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_impl_definition();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_variable_definition();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_variable_declaration();
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_function_declaration(VisMod vis_mod = VisMod::PRIV);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_struct_definition(VisMod vis_mod = VisMod::PRIV);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_enum_definition(VisMod vis_mod = VisMod::PRIV);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_trait_definition(VisMod vis_mod = VisMod::PRIV);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_impl_definition(VisMod vis_mod = VisMod::PRIV);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_variable_definition(VisMod vis_mod = VisMod::PRIV,
+                            OwnershipMod ownership = OwnershipMod::OWNED);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_variable_declaration(VisMod vis_mod = VisMod::PRIV,
+                             OwnershipMod ownership = OwnershipMod::OWNED);
   std::expected<std::unique_ptr<AST>, ParseError> parse_trait_bound();
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_param_list();
@@ -113,9 +122,10 @@ private:
   std::expected<std::unique_ptr<AST>, ParseError> parse_power_expression();
   std::expected<std::unique_ptr<AST>, ParseError> parse_paren_expression();
   std::expected<std::unique_ptr<AST>, ParseError> parse_function_call();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_calls();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError> parse_calls();
   std::expected<std::unique_ptr<AST>, ParseError> parse_call();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_argument_list();
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_argument_list();
   std::expected<std::unique_ptr<AST>, ParseError> parse_enum_construction();
   std::expected<std::unique_ptr<AST>, ParseError> parse_field_assignment();
   std::expected<std::unique_ptr<AST>, ParseError> parse_struct_type();

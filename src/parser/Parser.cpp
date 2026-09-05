@@ -1,11 +1,12 @@
 #include "Parser.hpp"
+#include "NodeFactory.hpp"
 #include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
 #include "tools/OwnershipMod.hpp"
 #include "tools/ParseError.hpp"
 #include "tools/SourceLocation.hpp"
-#include <cmath>
+#include "tools/VisMod.hpp"
 #include <expected>
 #include <memory>
 #include <utility>
@@ -19,18 +20,16 @@
 std::unique_ptr<AST> Parser::parse() { return parse_program().value(); }
 
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_program() {
-  auto program = std::make_unique<Program>(peek().loc);
-
+  std::vector<std::unique_ptr<AST>> decls;
   while (!is_at_end()) {
     auto top = parse_top_level_decl();
 
     if (!top)
       handle_parser_error(top.error(), curr_token);
-
-    program->top_level_decls.push_back(std::move(*top));
+    decls.push_back(std::move(*top));
   }
 
-  return program;
+  return make_program_node(decls[0]->loc, std::move(decls));
 }
 
 /**
@@ -43,79 +42,39 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_program() {
  *
  */
 std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_top_level_decl() {
-  std::unique_ptr<AST> decl;
-  switch (peek().type) {
-  case TokenType::IMPORT:
-    decl = std::move(*parse_import());
-    break;
-  case TokenType::FUNC:
-  case TokenType::ATTRIBUTE:
-    decl = std::move(*parse_function_definition());
-    break;
-  case TokenType::STRUCT:
-    decl = std::move(*parse_struct_definition());
-    break;
-  case TokenType::ENUM:
-    decl = std::move(*parse_enum_definition());
-    break;
-  case TokenType::TRAIT:
-    decl = std::move(*parse_trait_definition());
-    break;
-  case TokenType::IMPL:
-    decl = std::move(*parse_impl_definition());
-    break;
-  case TokenType::STATIC:
-  case TokenType::OWNED:
-  case TokenType::REF:
-  case TokenType::SHARED:
-  case TokenType::CONST:
-  case TokenType::IDENTIFIER:
-    decl = std::move(*parse_variable_definition());
-    break;
-  case TokenType::PRIV:
-  case TokenType::PUB:
-    decl = std::move(*parse_vismod());
-    break;
-  default:
-    return std::unexpected(ParseError::UnexpectedToken);
-  }
-  return decl;
-}
+  VisMod vis_mod = VisMod::PRIV;
+  if (auto pub = consume(TokenType::PUB); pub)
+    vis_mod = VisMod::PUB;
+  else
+    auto priv = consume(TokenType::PRIV);
 
-/**
- * @brief used to parse a top level declaration/definition that has a
- * visibility modifier
- *
- * @return AST node for a declaration/definition with a visibility modifier
- */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_vismod() {
-  std::unique_ptr<AST> decl;
-  switch (look_ahead().type) {
-  case TokenType::FUNC:
-    decl = std::move(*parse_function_definition());
-    break;
-  case TokenType::STRUCT:
-    decl = std::move(*parse_struct_definition());
-    break;
-  case TokenType::ENUM:
-    decl = std::move(*parse_enum_definition());
-    break;
-  case TokenType::TRAIT:
-    decl = std::move(*parse_trait_definition());
-    break;
-  case TokenType::STATIC:
-  case TokenType::OWNED:
-  case TokenType::REF:
-  case TokenType::SHARED:
-  case TokenType::CONST:
-  case TokenType::IDENTIFIER:
-    decl = std::move(*parse_variable_definition());
-    break;
-  default:
-    return std::unexpected(ParseError::UnexpectedToken);
-  }
-
-  return decl;
+  if (consume(TokenType::IMPORT))
+    return parse_import();
+  if (consume(TokenType::FUNC) || expect(TokenType::ATTRIBUTE))
+    return parse_function_definition(vis_mod);
+  if (consume(TokenType::STRUCT))
+    return parse_struct_definition(vis_mod);
+  if (consume(TokenType::ENUM))
+    return parse_enum_definition(vis_mod);
+  if (consume(TokenType::TRAIT))
+    return parse_trait_definition(vis_mod);
+  if (consume(TokenType::IMPL))
+    return parse_impl_definition(vis_mod);
+  if (auto owner = consume(TokenType::OWNED); owner)
+    return parse_variable_definition(vis_mod);
+  if (auto owner = consume(TokenType::STATIC); owner)
+    return parse_variable_definition(vis_mod, convert_ownership(owner->type));
+  if (auto owner = consume(TokenType::REF); owner)
+    return parse_variable_definition(vis_mod, convert_ownership(owner->type));
+  if (auto owner = consume(TokenType::SHARED); owner)
+    return parse_variable_definition(vis_mod, convert_ownership(owner->type));
+  if (auto owner = consume(TokenType::CONST); owner)
+    return parse_variable_definition(vis_mod, convert_ownership(owner->type));
+  if (expect(TokenType::IDENTIFIER))
+    return parse_variable_definition(vis_mod);
+  if (expect(TokenType::END_OF_FILE))
+    return std::unexpected(ParseError::UnexpectedEOF);
+  return std::unexpected(ParseError::UnexpectedToken);
 }
 
 /**
@@ -136,9 +95,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_import() {
   if (!import_name)
     return std::unexpected(import_name.error());
 
-  auto import = std::make_unique<ImportStatement>(import_name->loc);
-  import->module = import_name->lexeme;
-  return import;
+  return make_import_node(import_name->loc, import_name->lexeme);
 }
 
 /**
@@ -156,16 +113,15 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_import() {
  * @return function definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_function_definition() {
-  auto func = std::make_unique<FunctionDef>(peek().loc);
-
+Parser::parse_function_definition(VisMod vis_mod) {
+  std::vector<std::unique_ptr<AST>> attributes;
   auto att = consume(TokenType::ATTRIBUTE);
   while (att) {
-    func->attributes.emplace_back(new Attribute(att->loc, att->lexeme));
+    attributes.push_back(std::make_unique<Attribute>(att->loc, att->lexeme));
     att = consume(TokenType::ATTRIBUTE);
   }
 
-  func->vis_mod = get_visibility();
+  vis_mod = get_visibility();
 
   auto keyword = consume(TokenType::FUNC); // skip FUNC keyword
   if (!keyword)
@@ -175,32 +131,26 @@ Parser::parse_function_definition() {
   if (!name)
     return std::unexpected(name.error());
 
-  func->name = name->lexeme;
-
   auto gen_dec = parse_generic_declaration();
   if (!gen_dec)
     return std::unexpected(gen_dec.error());
 
-  func->generics = std::move(*gen_dec);
-
   auto param_list = parse_param_list();
-
   if (!param_list)
     return std::unexpected(param_list.error());
-  func->param_list = std::move(*param_list);
 
   auto ret = parse_function_return();
   if (!ret)
     return std::unexpected(ret.error());
 
-  func->function_return = std::move(*ret);
-
   auto block = parse_block();
   if (!block)
     return std::unexpected(block.error());
-  func->block = std::move(*block);
 
-  return func;
+  return make_func_def_node(keyword->loc, std::move(attributes), vis_mod,
+                            name->lexeme, std::move(*gen_dec),
+                            std::move(*param_list), std::move(*ret),
+                            std::move(*block));
 }
 
 /**
@@ -216,32 +166,30 @@ Parser::parse_function_definition() {
  * @return function declaration AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_function_declaration() {
-  auto func = std::make_unique<FunctionDecl>(peek().loc);
-
-  func->vis_mod = get_visibility();
+Parser::parse_function_declaration(VisMod vis_mod) {
+  auto func = consume(TokenType::FUNC);
+  if (!func)
+    return std::unexpected(func.error());
 
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
-  func->name = name->lexeme;
 
   auto gen_dec = parse_generic_declaration();
   if (!gen_dec)
     return std::unexpected(gen_dec.error());
-  func->generics = std::move(*gen_dec);
 
   auto param_list = parse_param_list();
   if (!param_list)
     return std::unexpected(param_list.error());
-  func->param_list = std::move(*param_list);
 
   auto function_return = parse_function_return();
   if (!function_return)
     return std::unexpected(function_return.error());
-  func->function_return = std::move(*function_return);
 
-  return func;
+  return make_func_decl_node(func->loc, vis_mod, name->lexeme,
+                             std::move(*gen_dec), std::move(*param_list),
+                             std::move(*function_return));
 }
 
 /**
@@ -255,21 +203,18 @@ Parser::parse_function_declaration() {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_function_return() {
-  auto ret = std::make_unique<FunctionReturn>(peek().loc);
-
-  if (auto point = consume(TokenType::RETURN_POINT); !point)
+  auto point = consume(TokenType::RETURN_POINT);
+  if (!point)
     return std::unexpected(point.error());
 
   OwnershipMod owner = get_ownership();
-  ret->ownership = owner;
 
   auto ret_type = get_type();
 
   if (!ret_type)
     return std::unexpected(ParseError::UnexpectedToken);
-  ret->type = *ret_type;
 
-  return ret;
+  return make_function_return_node(point->loc, owner, *ret_type);
 }
 
 /**
@@ -316,15 +261,12 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
   auto param = std::make_unique<Param>(peek().loc);
 
   OwnershipMod owner = get_ownership();
-  if (owner == OwnershipMod::ERROR)
-    return std::unexpected(ParseError::UnexpectedToken);
-  param->ownership = owner;
 
   auto name = consume(TokenType::IDENTIFIER);
-  param->name = name->lexeme;
 
+  bool is_array = false;
   if (consume(TokenType::LBRACKET)) {
-    param->is_array = true;
+    is_array = true;
     if (!consume(TokenType::RBRACKET))
       return std::unexpected(ParseError::UnexpectedToken);
   }
@@ -335,9 +277,8 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
   auto param_type = get_type();
   if (!param_type)
     return std::unexpected(ParseError::UnexpectedToken);
-  param->type = *param_type;
 
-  return param;
+  return make_param_node(name->loc, owner, name->lexeme, is_array, *param_type);
 }
 
 /**
@@ -352,7 +293,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
  * @return struct definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_struct_definition() {
+Parser::parse_struct_definition(VisMod vis_mod) {
   auto strct = std::make_unique<StructDef>(peek().loc);
 
   strct->vis_mod = get_visibility();
@@ -471,7 +412,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_struct_field() {
  * @return enum definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_enum_definition() {
+Parser::parse_enum_definition(VisMod vis_mod) {
   auto enm = std::make_unique<EnumDef>(peek().loc);
 
   enm->vis_mod = get_visibility();
@@ -593,7 +534,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_field() {
  * @return trait definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_trait_definition() {
+Parser::parse_trait_definition(VisMod vis_mod) {
   auto trait = std::make_unique<TraitDef>(peek().loc);
   trait->vis_mod = get_visibility();
 
@@ -663,7 +604,7 @@ Parser::parse_trait_block() {
  * @return implementation definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_impl_definition() {
+Parser::parse_impl_definition(VisMod vis_mod) {
   auto impl = std::make_unique<ImplDef>(peek().loc);
 
   impl->vis_mod = get_visibility();
@@ -734,7 +675,7 @@ Parser::parse_impl_block() {
  * @return variable definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_variable_definition() {
+Parser::parse_variable_definition(VisMod vis_mod, OwnershipMod ownership) {
 
   auto decl = parse_variable_declaration();
   if (!decl)
@@ -772,7 +713,7 @@ Parser::parse_variable_definition() {
  * @return variable declaration AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_variable_declaration() {
+Parser::parse_variable_declaration(VisMod vis_mod, OwnershipMod ownership) {
   auto decl = std::make_unique<VariableDecl>(peek().loc);
 
   decl->vis_mod = get_visibility();
