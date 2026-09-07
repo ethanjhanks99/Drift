@@ -58,3 +58,11 @@ std::unique_ptr<AST> make_impl_node(SourceLocation loc, VisMod vis_mod,
                                     std::vector<std::unique_ptr<AST>> generics,
                                     std::vector<std::unique_ptr<AST>> block,
                                     bool with_trait);
+std::unique_ptr<AST> make_var_def_node(SourceLocation loc,
+                                       std::unique_ptr<AST> var_decl,
+                                       std::unique_ptr<AST> expression);
+std::unique_ptr<AST> make_var_decl_node(SourceLocation loc, VisMod vis_mod,
+                                        OwnershipMod ownership,
+                                        std::string name,
+                                        std::unique_ptr<AST> array_size,
+                                        Type type);

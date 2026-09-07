@@ -45,96 +45,150 @@ private:
   std::unique_ptr<AST> make_unary_node(std::unique_ptr<AST> operand, UnaryOp op,
                                        bool prefix);
 
-  std::expected<std::unique_ptr<AST>, ParseError> parse_program();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_top_level_decl();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_import();
   std::expected<std::unique_ptr<AST>, ParseError>
-  parse_function_definition(VisMod vis_mod = VisMod::PRIV);
-  std::expected<std::unique_ptr<AST>, ParseError> parse_function_return();
+  parse_program(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>
-  parse_function_declaration(VisMod vis_mod = VisMod::PRIV);
+  parse_top_level_decl(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>
-  parse_struct_definition(VisMod vis_mod = VisMod::PRIV);
+  parse_import(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>
-  parse_enum_definition(VisMod vis_mod = VisMod::PRIV);
+  parse_function_definition(SourceLocation loc, VisMod vis_mod = VisMod::PRIV);
   std::expected<std::unique_ptr<AST>, ParseError>
-  parse_trait_definition(VisMod vis_mod = VisMod::PRIV);
+  parse_function_return(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>
-  parse_impl_definition(VisMod vis_mod = VisMod::PRIV);
+  parse_function_declaration(SourceLocation loc, VisMod vis_mod = VisMod::PRIV);
   std::expected<std::unique_ptr<AST>, ParseError>
-  parse_variable_definition(VisMod vis_mod = VisMod::PRIV,
+  parse_struct_definition(SourceLocation loc, VisMod vis_mod = VisMod::PRIV);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_enum_definition(SourceLocation loc, VisMod vis_mod = VisMod::PRIV);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_trait_definition(SourceLocation loc, VisMod vis_mod = VisMod::PRIV);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_impl_definition(SourceLocation loc, VisMod vis_mod = VisMod::PRIV);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_variable_definition(SourceLocation loc, VisMod vis_mod = VisMod::PRIV,
                             OwnershipMod ownership = OwnershipMod::OWNED);
   std::expected<std::unique_ptr<AST>, ParseError>
-  parse_variable_declaration(VisMod vis_mod = VisMod::PRIV,
+  parse_variable_declaration(SourceLocation loc, VisMod vis_mod = VisMod::PRIV,
                              OwnershipMod ownership = OwnershipMod::OWNED);
-  std::expected<std::unique_ptr<AST>, ParseError> parse_trait_bound();
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_trait_bound(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_param_list();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_param();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_inherits();
-  std::expected<std::vector<std::unique_ptr<AST>>, ParseError> parse_block();
+  parse_param_list(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_param(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_inherits(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_generic_declaration();
+  parse_block(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_struct_block();
+  parse_generic_declaration(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_struct_fields();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_struct_field();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_array_def();
+  parse_struct_block(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_enum_block();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_enum_value();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_enum_field();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_module_access();
+  parse_struct_fields(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_struct_field(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_array_def(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_trait_block();
+  parse_enum_block(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_enum_value(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_enum_field(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_module_access(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_impl_block();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_if_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_while_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_do_while_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_for_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_ranged();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_foreach();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_loop_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_assembly_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_match_statement();
+  parse_trait_block(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_match_block();
+  parse_impl_block(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_statement(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_if_statement(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_while_statement(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_do_while_statement(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_for_statement(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_ranged(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_foreach(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_loop_statement(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_assembly_statement(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_match_statement(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_match_options();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_match_option();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_simple_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_assignment();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_return_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_impl_access();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_break_statement();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_or_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_and_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_bitor_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_bitx_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_bitand_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_bitshift_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_sum_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_mult_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_unary_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_post_unary_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_power_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_paren_expression();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_function_call();
-  std::expected<std::vector<std::unique_ptr<AST>>, ParseError> parse_calls();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_call();
+  parse_match_block(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_argument_list();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_enum_construction();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_field_assignment();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_struct_type();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_generic_definition();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_generic_type();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_mutable();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_immutable();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_array_access();
-  std::expected<std::unique_ptr<AST>, ParseError> parse_point_access();
+  parse_match_options(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_match_option(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_simple_statement(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_assignment(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_return_statement(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_impl_access(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_break_statement(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_or_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_and_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_bitor_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_bitx_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_bitand_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_bitshift_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_sum_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_mult_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_unary_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_post_unary_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_power_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_paren_expression(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_function_call(SourceLocation loc);
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_calls(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_call(SourceLocation loc);
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+  parse_argument_list(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_enum_construction(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_field_assignment(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_struct_type(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_generic_definition(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_generic_type(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_mutable(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_immutable(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_array_access(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
+  parse_point_access(SourceLocation loc);
 };

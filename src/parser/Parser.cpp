@@ -1,6 +1,5 @@
 #include "Parser.hpp"
 #include "NodeFactory.hpp"
-#include "build/_deps/catch2-src/src/catch2/internal/catch_meta.hpp"
 #include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
@@ -18,13 +17,15 @@
  *
  * @return the head of the newly created abstract syntax tree
  */
-std::unique_ptr<AST> Parser::parse() { return parse_program().value(); }
+std::unique_ptr<AST> Parser::parse() {
+  return parse_program(get_loc()).value();
+}
 
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_program() {
-  SourceLocation loc = get_loc();
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_program(SourceLocation loc) {
   std::vector<std::unique_ptr<AST>> decls;
   while (!is_at_end()) {
-    auto top = parse_top_level_decl();
+    auto top = parse_top_level_decl(loc);
 
     if (!top)
       handle_parser_error(top.error(), curr_token);
@@ -43,7 +44,8 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_program() {
  * @return AST node for the top level declaration
  *
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_top_level_decl() {
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_top_level_decl(SourceLocation loc) {
   VisMod vis_mod = VisMod::PRIV;
   if (auto pub = consume(TokenType::PUB); pub)
     vis_mod = VisMod::PUB;
@@ -51,29 +53,33 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_top_level_decl() {
     auto priv = consume(TokenType::PRIV);
 
   if (consume(TokenType::IMPORT))
-    return parse_import();
+    return parse_import(loc);
   if (consume(TokenType::FUNC) || expect(TokenType::ATTRIBUTE))
-    return parse_function_definition(vis_mod);
+    return parse_function_definition(loc, vis_mod);
   if (consume(TokenType::STRUCT))
-    return parse_struct_definition(vis_mod);
+    return parse_struct_definition(loc, vis_mod);
   if (consume(TokenType::ENUM))
-    return parse_enum_definition(vis_mod);
+    return parse_enum_definition(loc, vis_mod);
   if (consume(TokenType::TRAIT))
-    return parse_trait_definition(vis_mod);
+    return parse_trait_definition(loc, vis_mod);
   if (consume(TokenType::IMPL))
-    return parse_impl_definition(vis_mod);
+    return parse_impl_definition(loc, vis_mod);
   if (auto owner = consume(TokenType::OWNED); owner)
-    return parse_variable_definition(vis_mod);
+    return parse_variable_definition(loc, vis_mod);
   if (auto owner = consume(TokenType::STATIC); owner)
-    return parse_variable_definition(vis_mod, convert_ownership(owner->type));
+    return parse_variable_definition(loc, vis_mod,
+                                     convert_ownership(owner->type));
   if (auto owner = consume(TokenType::REF); owner)
-    return parse_variable_definition(vis_mod, convert_ownership(owner->type));
+    return parse_variable_definition(loc, vis_mod,
+                                     convert_ownership(owner->type));
   if (auto owner = consume(TokenType::SHARED); owner)
-    return parse_variable_definition(vis_mod, convert_ownership(owner->type));
+    return parse_variable_definition(loc, vis_mod,
+                                     convert_ownership(owner->type));
   if (auto owner = consume(TokenType::CONST); owner)
-    return parse_variable_definition(vis_mod, convert_ownership(owner->type));
+    return parse_variable_definition(loc, vis_mod,
+                                     convert_ownership(owner->type));
   if (expect(TokenType::IDENTIFIER))
-    return parse_variable_definition(vis_mod);
+    return parse_variable_definition(loc, vis_mod);
   if (expect(TokenType::END_OF_FILE))
     return std::unexpected(ParseError::UnexpectedEOF);
   return std::unexpected(ParseError::UnexpectedToken);
@@ -87,8 +93,8 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_top_level_decl() {
  *
  * @return import statement node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_import() {
-  SourceLocation loc = get_loc();
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_import(SourceLocation loc) {
   auto import_name = consume(TokenType::IDENTIFIER);
   if (!import_name)
     return std::unexpected(import_name.error());
@@ -111,8 +117,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_import() {
  * @return function definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_function_definition(VisMod vis_mod) {
-  SourceLocation loc = get_loc();
+Parser::parse_function_definition(SourceLocation loc, VisMod vis_mod) {
   std::vector<std::unique_ptr<AST>> attributes;
   auto att = consume(TokenType::ATTRIBUTE);
   while (att) {
@@ -130,19 +135,19 @@ Parser::parse_function_definition(VisMod vis_mod) {
   if (!name)
     return std::unexpected(name.error());
 
-  auto gen_dec = parse_generic_declaration();
+  auto gen_dec = parse_generic_declaration(get_loc());
   if (!gen_dec)
     return std::unexpected(gen_dec.error());
 
-  auto param_list = parse_param_list();
+  auto param_list = parse_param_list(get_loc());
   if (!param_list)
     return std::unexpected(param_list.error());
 
-  auto ret = parse_function_return();
+  auto ret = parse_function_return(get_loc());
   if (!ret)
     return std::unexpected(ret.error());
 
-  auto block = parse_block();
+  auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
 
@@ -164,8 +169,7 @@ Parser::parse_function_definition(VisMod vis_mod) {
  * @return function declaration AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_function_declaration(VisMod vis_mod) {
-  SourceLocation loc = get_loc();
+Parser::parse_function_declaration(SourceLocation loc, VisMod vis_mod) {
   auto func = consume(TokenType::FUNC);
   if (!func)
     return std::unexpected(func.error());
@@ -174,15 +178,15 @@ Parser::parse_function_declaration(VisMod vis_mod) {
   if (!name)
     return std::unexpected(name.error());
 
-  auto gen_dec = parse_generic_declaration();
+  auto gen_dec = parse_generic_declaration(get_loc());
   if (!gen_dec)
     return std::unexpected(gen_dec.error());
 
-  auto param_list = parse_param_list();
+  auto param_list = parse_param_list(get_loc());
   if (!param_list)
     return std::unexpected(param_list.error());
 
-  auto function_return = parse_function_return();
+  auto function_return = parse_function_return(get_loc());
   if (!function_return)
     return std::unexpected(function_return.error());
 
@@ -201,8 +205,7 @@ Parser::parse_function_declaration(VisMod vis_mod) {
  * @return function return AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_function_return() {
-  SourceLocation loc = get_loc();
+Parser::parse_function_return(SourceLocation loc) {
   auto point = consume(TokenType::RETURN_POINT);
   if (!point)
     return std::unexpected(point.error());
@@ -223,7 +226,7 @@ Parser::parse_function_return() {
  * @return a list of param AST nodes
  */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_param_list() {
+Parser::parse_param_list(SourceLocation loc) {
   std::vector<std::unique_ptr<AST>> param_list;
 
   if (auto paren = consume(TokenType::LPAREN); !paren)
@@ -233,7 +236,7 @@ Parser::parse_param_list() {
     return param_list;
 
   do {
-    auto param = parse_param();
+    auto param = parse_param(get_loc());
     if (!param)
       return param_list;
     param_list.push_back(std::move(*param));
@@ -257,8 +260,8 @@ Parser::parse_param_list() {
  *
  * @return a param AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
-  SourceLocation loc = get_loc();
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_param(SourceLocation loc) {
   OwnershipMod owner = get_ownership();
 
   auto name = consume(TokenType::IDENTIFIER);
@@ -292,18 +295,17 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_param() {
  * @return struct definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_struct_definition(VisMod vis_mod) {
-  SourceLocation loc = peek().loc;
+Parser::parse_struct_definition(SourceLocation loc, VisMod vis_mod) {
 
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
 
-  auto gen_dec = parse_generic_declaration();
+  auto gen_dec = parse_generic_declaration(get_loc());
   if (!gen_dec)
     return std::unexpected(gen_dec.error());
 
-  auto fields = parse_struct_block();
+  auto fields = parse_struct_block(get_loc());
   if (!fields)
     return std::unexpected(fields.error());
 
@@ -317,11 +319,11 @@ Parser::parse_struct_definition(VisMod vis_mod) {
  * @return a vector of field AST
  */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_struct_block() {
+Parser::parse_struct_block(SourceLocation loc) {
   if (auto brace = consume(TokenType::LBRACE); !brace)
     return std::unexpected(brace.error());
 
-  auto fields = parse_struct_fields();
+  auto fields = parse_struct_fields(loc);
   if (!fields)
     return std::unexpected(fields.error());
 
@@ -337,14 +339,15 @@ Parser::parse_struct_block() {
  * @return vector of field ASTs
  */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_struct_fields() {
+Parser::parse_struct_fields(SourceLocation loc) {
   std::vector<std::unique_ptr<AST>> fields;
 
   do {
-    auto field = parse_struct_field();
+    auto field = parse_struct_field(loc);
     if (!field)
       return std::unexpected(field.error());
     fields.push_back(std::move(*field));
+    loc = get_loc();
   } while (!expect(TokenType::RBRACE));
 
   return fields;
@@ -362,9 +365,8 @@ Parser::parse_struct_fields() {
  *
  * @return field AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_struct_field() {
-  SourceLocation loc = get_loc();
-
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_struct_field(SourceLocation loc) {
   auto vis_mod = get_visibility();
   auto ownership = get_ownership();
 
@@ -402,18 +404,17 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_struct_field() {
  * @return enum definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_enum_definition(VisMod vis_mod) {
-  SourceLocation loc = get_loc();
+Parser::parse_enum_definition(SourceLocation loc, VisMod vis_mod) {
 
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
 
-  auto gen_dec = parse_generic_declaration();
+  auto gen_dec = parse_generic_declaration(get_loc());
   if (!gen_dec)
     return std::unexpected(gen_dec.error());
 
-  auto enum_values = parse_enum_block();
+  auto enum_values = parse_enum_block(get_loc());
   if (!enum_values)
     return std::unexpected(enum_values.error());
 
@@ -427,17 +428,18 @@ Parser::parse_enum_definition(VisMod vis_mod) {
  * @return vector of enum values
  */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_enum_block() {
+Parser::parse_enum_block(SourceLocation loc) {
   if (auto brace = consume(TokenType::LBRACE); !brace)
     return std::unexpected(brace.error());
 
   std::vector<std::unique_ptr<AST>> values;
 
   do {
-    auto value = parse_enum_value();
+    auto value = parse_enum_value(loc);
     if (!value)
       return std::unexpected(value.error());
     values.push_back(std::move(*value));
+    loc = get_loc();
   } while (consume(TokenType::COMMA));
 
   if (auto brace = consume(TokenType::RBRACE); !brace)
@@ -454,9 +456,8 @@ Parser::parse_enum_block() {
  *
  * @return enum value AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_value() {
-  SourceLocation loc = get_loc();
-
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_enum_value(SourceLocation loc) {
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
@@ -464,7 +465,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_value() {
   std::vector<std::unique_ptr<AST>> fields;
   if (consume(TokenType::LBRACE)) {
     do {
-      auto field = parse_enum_field();
+      auto field = parse_enum_field(get_loc());
       if (!field)
         return std::unexpected(field.error());
       fields.push_back(std::move(*field));
@@ -486,9 +487,8 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_value() {
  *
  * @return an enum value field AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_field() {
-  SourceLocation loc = get_loc();
-
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_enum_field(SourceLocation loc) {
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
@@ -515,21 +515,19 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_enum_field() {
  * @return trait definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_trait_definition(VisMod vis_mod) {
-  SourceLocation loc = get_loc();
-
+Parser::parse_trait_definition(SourceLocation loc, VisMod vis_mod) {
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
 
   std::expected<std::unique_ptr<AST>, ParseError> inherits;
   if (consume(TokenType::COLON)) {
-    inherits = parse_inherits();
+    inherits = parse_inherits(get_loc());
     if (!inherits)
       return std::unexpected(inherits.error());
   }
 
-  auto body = parse_trait_block();
+  auto body = parse_trait_block(get_loc());
   if (!body)
     return std::unexpected(body.error());
 
@@ -544,19 +542,20 @@ Parser::parse_trait_definition(VisMod vis_mod) {
  * declarations
  */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_trait_block() {
+Parser::parse_trait_block(SourceLocation loc) {
   std::vector<std::unique_ptr<AST>> block;
 
   if (auto brace = consume(TokenType::LBRACE); !brace)
     return std::unexpected(brace.error());
 
   do {
-    auto func = parse_function_declaration();
+    auto func = parse_function_declaration(loc);
     if (!func)
       return std::unexpected(func.error());
     block.push_back(std::move(*func));
     if (auto semicolon = consume(TokenType::SEMICOLON); !semicolon)
       return std::unexpected(semicolon.error());
+    loc = get_loc();
   } while (consume(TokenType::FUNC) || peek().type == TokenType::PRIV ||
            peek().type == TokenType::PUB);
 
@@ -581,9 +580,7 @@ Parser::parse_trait_block() {
  * @return implementation definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_impl_definition(VisMod vis_mod) {
-  SourceLocation loc = get_loc();
-
+Parser::parse_impl_definition(SourceLocation loc, VisMod vis_mod) {
   auto id_trait = consume(TokenType::IDENTIFIER);
   if (!id_trait)
     return std::unexpected(id_trait.error());
@@ -598,18 +595,15 @@ Parser::parse_impl_definition(VisMod vis_mod) {
       return std::unexpected(id_name.error());
   }
 
-  auto generics = parse_generic_declaration();
+  auto generics = parse_generic_declaration(get_loc());
   if (!generics)
     return std::unexpected(generics.error());
 
-  auto block = parse_impl_block();
+  auto block = parse_impl_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
 
-  if (with_trait)
-    return make_impl_node(loc, vis_mod, id_name->lexeme, id_trait->lexeme,
-                          std::move(*generics), std::move(*block), with_trait);
-  return make_impl_node(loc, vis_mod, id_trait->lexeme, id_trait->lexeme,
+  return make_impl_node(loc, vis_mod, id_name->lexeme, id_trait->lexeme,
                         std::move(*generics), std::move(*block), with_trait);
 }
 
@@ -620,17 +614,18 @@ Parser::parse_impl_definition(VisMod vis_mod) {
  * @return vector of function definition AST nodes
  */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_impl_block() {
+Parser::parse_impl_block(SourceLocation loc) {
   if (auto brace = consume(TokenType::LBRACE); !brace)
     return std::unexpected(brace.error());
 
   std::vector<std::unique_ptr<AST>> implementations;
 
   do {
-    auto func = parse_function_definition();
+    auto func = parse_function_definition(loc);
     if (!func)
       return std::unexpected(func.error());
     implementations.push_back(std::move(*func));
+    loc = get_loc();
   } while (consume(TokenType::FUNC) || peek().type == TokenType::PRIV ||
            peek().type == TokenType::PUB);
 
@@ -650,29 +645,25 @@ Parser::parse_impl_block() {
  * @return variable definition AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_variable_definition(VisMod vis_mod, OwnershipMod ownership) {
-
-  auto decl = parse_variable_declaration();
+Parser::parse_variable_definition(SourceLocation loc, VisMod vis_mod,
+                                  OwnershipMod ownership) {
+  auto decl = parse_variable_declaration(loc, vis_mod, ownership);
   if (!decl)
     return std::unexpected(decl.error());
 
   // if the statement ends after the declaration, then return a variable
   // declaration instead of a definition
-  if (expect(TokenType::SEMICOLON))
+  if (consume(TokenType::SEMICOLON))
     return decl;
-
-  auto def = std::make_unique<VariableDef>(peek().loc);
-  def->decl = std::move(*decl);
 
   if (auto assign = consume(TokenType::ASSIGN); !assign)
     return std::unexpected(assign.error());
 
-  auto expression = parse_expression();
+  auto expression = parse_expression(get_loc());
   if (!expression)
     return std::unexpected(expression.error());
-  def->expression = std::move(*expression);
 
-  return def;
+  return make_var_def_node(loc, std::move(*decl), std::move(*expression));
 }
 
 /**
@@ -688,30 +679,26 @@ Parser::parse_variable_definition(VisMod vis_mod, OwnershipMod ownership) {
  * @return variable declaration AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_variable_declaration(VisMod vis_mod, OwnershipMod ownership) {
-  auto decl = std::make_unique<VariableDecl>(peek().loc);
-
-  decl->vis_mod = get_visibility();
-
-  decl->ownership = get_ownership();
-
+Parser::parse_variable_declaration(SourceLocation loc, VisMod vis_mod,
+                                   OwnershipMod ownership) {
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
-  decl->name = name->lexeme;
 
-  auto array_decl = parse_array_def();
-  if (!array_decl)
-    return std::unexpected(array_decl.error());
-  decl->array_size = std::move(*array_decl);
+  bool is_array = false;
+  auto array_decl = parse_array_def(get_loc());
+  if (array_decl)
+    is_array = true;
 
   auto var_type = get_type();
   if (!var_type)
     return std::unexpected(ParseError::UnexpectedToken);
 
-  decl->type = *var_type;
-
-  return decl;
+  if (is_array)
+    return make_var_decl_node(loc, vis_mod, ownership, name->lexeme,
+                              std::move(*array_decl), *var_type);
+  return make_var_decl_node(loc, vis_mod, ownership, name->lexeme, nullptr,
+                            *var_type);
 }
 
 /**
@@ -720,17 +707,18 @@ Parser::parse_variable_declaration(VisMod vis_mod, OwnershipMod ownership) {
  * @return vector of statement AST nodes
  */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_block() {
+Parser::parse_block(SourceLocation loc) {
   if (auto brace = consume(TokenType::LBRACE); !brace)
     return std::unexpected(brace.error());
 
   std::vector<std::unique_ptr<AST>> block;
 
   while (!consume(TokenType::RBRACE)) {
-    auto statement = parse_statement();
+    auto statement = parse_statement(loc);
     if (!statement)
       return std::unexpected(statement.error());
     block.push_back(std::move(*statement));
+    loc = get_loc();
   }
 
   return block;
@@ -742,27 +730,23 @@ Parser::parse_block() {
  *
  * @return statement AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_statement() {
-  std::unique_ptr<AST> statement;
-  switch (peek().type) {
-  case TokenType::IF:
-    statement = std::move(*parse_if_statement());
-  case TokenType::WHILE:
-    statement = std::move(*parse_while_statement());
-  case TokenType::DO:
-    statement = std::move(*parse_do_while_statement());
-  case TokenType::FOR:
-    statement = std::move(*parse_for_statement());
-  case TokenType::LOOP:
-    statement = std::move(*parse_loop_statement());
-  case TokenType::ASM:
-    statement = std::move(*parse_assembly_statement());
-  case TokenType::MATCH:
-    statement = std::move(*parse_match_statement());
-  default:
-    statement = std::move(*parse_simple_statement());
-  }
-  return statement;
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_statement(SourceLocation loc) {
+  if (consume(TokenType::IF))
+    return parse_if_statement(loc);
+  if (consume(TokenType::WHILE))
+    return parse_while_statement(loc);
+  if (consume(TokenType::DO))
+    return parse_do_while_statement(loc);
+  if (consume(TokenType::FOR))
+    return parse_for_statement(loc);
+  if (consume(TokenType::LOOP))
+    return parse_loop_statement(loc);
+  if (consume(TokenType::ASM))
+    return parse_assembly_statement(loc);
+  if (consume(TokenType::MATCH))
+    return parse_match_statement(loc);
+  return parse_simple_statement(loc);
 }
 
 /**
@@ -774,21 +758,19 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_statement() {
  *
  * @return if statement AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_if_statement() {
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_if_statement(SourceLocation loc) {
   auto if_stmt = std::make_unique<IfStmt>(peek().loc);
-
-  if (auto keyword = consume(TokenType::IF); !keyword)
-    return std::unexpected(keyword.error());
 
   if (auto paren = consume(TokenType::LPAREN); !paren)
     return std::unexpected(paren.error());
 
-  auto exp = parse_expression();
+  auto exp = parse_expression(get_loc());
   if (!exp)
     return std::unexpected(exp.error());
   if_stmt->condition = std::move(*exp);
 
-  auto block = parse_block();
+  auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
   if_stmt->block = std::move(*block);
@@ -807,7 +789,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_if_statement() {
  * @return while statement AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_while_statement() {
+Parser::parse_while_statement(SourceLocation loc) {
   auto while_stmt = std::make_unique<WhileStmt>(peek().loc);
 
   while_stmt->do_while = false;
@@ -818,7 +800,7 @@ Parser::parse_while_statement() {
   if (auto paren = consume(TokenType::LPAREN); !paren)
     return std::unexpected(paren.error());
 
-  auto expr = parse_expression();
+  auto expr = parse_expression(get_loc());
   if (!expr)
     return std::unexpected(expr.error());
   while_stmt->loop_condition = std::move(*expr);
@@ -826,7 +808,7 @@ Parser::parse_while_statement() {
   if (auto paren = consume(TokenType::RPAREN); !paren)
     return std::unexpected(paren.error());
 
-  auto block = parse_block();
+  auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
   while_stmt->block = std::move(*block);
@@ -845,7 +827,7 @@ Parser::parse_while_statement() {
  * @return while statement AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_do_while_statement() {
+Parser::parse_do_while_statement(SourceLocation loc) {
   auto while_stmt = std::make_unique<WhileStmt>(peek().loc);
 
   while_stmt->do_while = true;
@@ -853,7 +835,7 @@ Parser::parse_do_while_statement() {
   if (auto keyword = consume(TokenType::DO); !keyword)
     return std::unexpected(keyword.error());
 
-  auto block = parse_block();
+  auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
   while_stmt->block = std::move(*block);
@@ -864,7 +846,7 @@ Parser::parse_do_while_statement() {
   if (auto paren = consume(TokenType::LPAREN); !paren)
     return std::unexpected(paren.error());
 
-  auto expr = parse_expression();
+  auto expr = parse_expression(get_loc());
   if (!expr)
     return std::unexpected(expr.error());
   while_stmt->loop_condition = std::move(*expr);
@@ -884,15 +866,16 @@ Parser::parse_do_while_statement() {
  *
  * @return for loop AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_for_statement() {
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_for_statement(SourceLocation loc) {
   auto for_loop = std::make_unique<ForStmt>(peek().loc);
 
   if (auto paren = consume(TokenType::LPAREN); !paren)
     return std::unexpected(paren.error());
 
-  auto condition = parse_ranged();
+  auto condition = parse_ranged(get_loc());
   if (!condition) {
-    condition = parse_foreach();
+    condition = parse_foreach(get_loc());
     if (!condition)
       return std::unexpected(condition.error());
   }
@@ -901,7 +884,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_for_statement() {
   if (auto paren = consume(TokenType::RPAREN); !paren)
     return std::unexpected(paren.error());
 
-  auto block = parse_block();
+  auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
   for_loop->block = std::move(*block);
@@ -918,14 +901,15 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_for_statement() {
  *
  * @return ranged AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_ranged() {
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_ranged(SourceLocation loc) {
   auto range = std::make_unique<Ranged>(peek().loc);
 
-  auto var = parse_variable_declaration();
+  auto var = parse_variable_declaration(loc);
   if (!var)
     return std::unexpected(var.error());
 
-  auto min_expr = parse_expression();
+  auto min_expr = parse_expression(get_loc());
   if (!min_expr)
     return std::unexpected(min_expr.error());
 
@@ -940,7 +924,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_ranged() {
     range->inclusive = false;
   }
 
-  auto max_expr = parse_expression();
+  auto max_expr = parse_expression(get_loc());
   if (!max_expr)
     return std::unexpected(max_expr.error());
   range->max_exp = std::move(*max_expr);
@@ -957,10 +941,11 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_ranged() {
  *
  * @return foreach AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_foreach() {
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_foreach(SourceLocation loc) {
   auto for_each = std::make_unique<ForEach>(peek().loc);
 
-  auto var = parse_variable_declaration();
+  auto var = parse_variable_declaration(loc);
   if (!var)
     return std::unexpected(var.error());
   for_each->var_decl = std::move(*var);
@@ -968,7 +953,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_foreach() {
   if (auto colon = consume(TokenType::COLON); !colon)
     return std::unexpected(colon.error());
 
-  auto mut = parse_mutable();
+  auto mut = parse_mutable(get_loc());
   if (!mut)
     return std::unexpected(mut.error());
   for_each->mut = std::move(*mut);
@@ -984,13 +969,14 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_foreach() {
  *
  * @return loop AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_loop_statement() {
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_loop_statement(SourceLocation loc) {
   if (auto keyword = consume(TokenType::LOOP); !keyword)
     return std::unexpected(keyword.error());
 
   auto loop = std::make_unique<LoopStmt>(peek().loc);
 
-  auto block = parse_block();
+  auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
   loop->block = std::move(*block);
@@ -1007,13 +993,13 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_loop_statement() {
  * @return assembly statement AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_assembly_statement() {
+Parser::parse_assembly_statement(SourceLocation loc) {
   if (auto keyword = consume(TokenType::ASM); !keyword)
     return std::unexpected(keyword.error());
 
   auto asm_stmt = std::make_unique<AsmStmt>(peek().loc);
 
-  auto block = parse_block();
+  auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
   asm_stmt->block = std::move(*block);
@@ -1031,18 +1017,18 @@ Parser::parse_assembly_statement() {
  * @return match statement AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_match_statement() {
+Parser::parse_match_statement(SourceLocation loc) {
   if (auto keyword = consume(TokenType::MATCH); !keyword)
     return std::unexpected(keyword.error());
 
   auto match = std::make_unique<MatchStmt>(peek().loc);
 
-  auto mut = parse_mutable();
+  auto mut = parse_mutable(get_loc());
   if (!mut)
     return std::unexpected(mut.error());
   match->mut = std::move(*mut);
 
-  auto block = parse_match_block();
+  auto block = parse_match_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
   match->block = std::move(*block);
@@ -1056,11 +1042,11 @@ Parser::parse_match_statement() {
  * @return vector of match option AST nodes
  */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_match_block() {
+Parser::parse_match_block(SourceLocation loc) {
   if (auto brace = consume(TokenType::LBRACE); !brace)
     return std::unexpected(brace.error());
 
-  auto options = parse_match_options();
+  auto options = parse_match_options(get_loc());
   if (!options)
     return std::unexpected(options.error());
 
@@ -1073,14 +1059,15 @@ Parser::parse_match_block() {
  * @return vector of match option AST nodes
  */
 std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_match_options() {
+Parser::parse_match_options(SourceLocation loc) {
   std::vector<std::unique_ptr<AST>> options;
 
   do {
-    auto option = parse_match_option();
+    auto option = parse_match_option(loc);
     if (!option)
       return std::unexpected(option.error());
     options.push_back(std::move(*option));
+    loc = get_loc();
   } while (!consume(TokenType::RBRACE));
 
   return options;
@@ -1095,10 +1082,11 @@ Parser::parse_match_options() {
  *
  * @return match option AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_match_option() {
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_match_option(SourceLocation loc) {
   auto option = std::make_unique<MatchOption>(peek().loc);
 
-  auto val = parse_expression();
+  auto val = parse_expression(get_loc());
   if (!val)
     return std::unexpected(val.error());
   option->comp = std::move(*val);
@@ -1106,7 +1094,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_match_option() {
   if (auto arrow = consume(TokenType::MATCH_ARROW); !arrow)
     return std::unexpected(arrow.error());
 
-  auto block = parse_block();
+  auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
   option->block = std::move(*block);
@@ -1121,18 +1109,18 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_match_option() {
  * @return simple statement AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_simple_statement() {
+Parser::parse_simple_statement(SourceLocation loc) {
   std::unique_ptr<AST> decl;
   switch (peek().type) {
   case TokenType::CONST:
   case TokenType::REF:
   case TokenType::SHARED:
   case TokenType::OWNED:
-    decl = std::move(*parse_variable_definition());
+    decl = std::move(*parse_variable_definition(loc));
     break;
   case TokenType::IDENTIFIER:
     if (look_ahead().type == TokenType::COLON)
-      decl = std::move(*parse_variable_definition());
+      decl = std::move(*parse_variable_definition(loc));
     else {
       switch (look_ahead().type) {
       case TokenType::ASSIGN:
@@ -1140,7 +1128,7 @@ Parser::parse_simple_statement() {
       case TokenType::MINUS_EQUALS:
       case TokenType::MULT_EQUALS:
       case TokenType::DIVIDE_EQUALS:
-        decl = std::move(*parse_assignment());
+        decl = std::move(*parse_assignment(loc));
         break;
       default:
         break;
@@ -1148,7 +1136,7 @@ Parser::parse_simple_statement() {
     }
     break;
   case TokenType::RETURN:
-    decl = std::move(*parse_return_statement());
+    decl = std::move(*parse_return_statement(loc));
     break;
   case TokenType::CONTINUE:
     decl = std::make_unique<Continue>(peek().loc);
@@ -1156,10 +1144,10 @@ Parser::parse_simple_statement() {
       return std::unexpected(keyword.error());
     break;
   case TokenType::BREAK:
-    decl = std::move(*parse_break_statement());
+    decl = std::move(*parse_break_statement(loc));
     break;
   default:
-    decl = std::move(*parse_expression());
+    decl = std::move(*parse_expression(loc));
     break;
   }
 
@@ -1179,10 +1167,11 @@ Parser::parse_simple_statement() {
  *
  * @return assignment AST node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_assignment() {
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_assignment(SourceLocation loc) {
   auto assign = std::make_unique<Assignment>(peek().loc);
 
-  auto mut = parse_mutable();
+  auto mut = parse_mutable(get_loc());
   if (!mut)
     return std::unexpected(mut.error());
   assign->mut = std::move(*mut);
@@ -1192,7 +1181,7 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_assignment() {
     return std::unexpected(op.error());
   assign->op = *op;
 
-  auto expr = parse_expression();
+  auto expr = parse_expression(get_loc());
   if (!expr)
     return std::unexpected(expr.error());
   assign->expression = std::move(*expr);
@@ -1209,13 +1198,13 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_assignment() {
  * @return return statement AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_return_statement() {
+Parser::parse_return_statement(SourceLocation loc) {
   if (auto keyword = consume(TokenType::RETURN); !keyword)
     return std::unexpected(keyword.error());
 
   auto ret_stmt = std::make_unique<Return>(peek().loc);
 
-  auto ret_value = parse_expression();
+  auto ret_value = parse_expression(get_loc());
   if (ret_value)
     ret_stmt->return_value = std::move(*ret_value);
 
@@ -1233,13 +1222,13 @@ Parser::parse_return_statement() {
  * @return break statement AST node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_break_statement() {
+Parser::parse_break_statement(SourceLocation loc) {
   if (auto keyword = consume(TokenType::BREAK); !keyword)
     return std::unexpected(keyword.error());
 
   auto break_stmt = std::make_unique<Break>(peek().loc);
 
-  auto break_value = parse_expression();
+  auto break_value = parse_expression(get_loc());
   if (break_value)
     break_stmt->break_value = std::move(*break_value);
 
@@ -1253,13 +1242,14 @@ Parser::parse_break_statement() {
  * @return AST node representing the head of the exression. Could only have one
  * node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_expression() {
-  auto left = parse_or_expression();
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_expression(SourceLocation loc) {
+  auto left = parse_or_expression(loc);
   if (!left)
     return std::unexpected(left.error());
   auto op = get_compare_op();
   while (op) {
-    auto right = parse_or_expression();
+    auto right = parse_or_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
     left = make_binary_node(std::move(*left), std::move(*right), *op);
@@ -1281,13 +1271,14 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_expression() {
  *
  * @return AST expression node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_or_expression() {
-  auto left = parse_and_expression();
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_or_expression(SourceLocation loc) {
+  auto left = parse_and_expression(loc);
   if (!left)
     return std::unexpected(left.error());
   auto op = get_binary_op(TokenType::OR);
   while (op) {
-    auto right = parse_and_expression();
+    auto right = parse_and_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
     left = make_binary_node(std::move(*left), std::move(*right), *op);
@@ -1309,13 +1300,14 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_or_expression() {
  *
  * @return AST expression node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_and_expression() {
-  auto left = parse_bitor_expression();
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_and_expression(SourceLocation loc) {
+  auto left = parse_bitor_expression(loc);
   if (!left)
     return std::unexpected(left.error());
   auto op = get_binary_op(TokenType::AND);
   while (op) {
-    auto right = parse_bitor_expression();
+    auto right = parse_bitor_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
     left = make_binary_node(std::move(*left), std::move(*right), *op);
@@ -1338,13 +1330,13 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_and_expression() {
  * @return AST expression node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_bitor_expression() {
-  auto left = parse_bitx_expression();
+Parser::parse_bitor_expression(SourceLocation loc) {
+  auto left = parse_bitx_expression(loc);
   if (!left)
     return std::unexpected(left.error());
   auto op = get_binary_op(TokenType::BIT_OR);
   while (op) {
-    auto right = parse_bitx_expression();
+    auto right = parse_bitx_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
     left = make_binary_node(std::move(*left), std::move(*right), *op);
@@ -1367,13 +1359,13 @@ Parser::parse_bitor_expression() {
  * @return AST expression node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_bitx_expression() {
-  auto left = parse_bitand_expression();
+Parser::parse_bitx_expression(SourceLocation loc) {
+  auto left = parse_bitand_expression(loc);
   if (!left)
     return std::unexpected(left.error());
   auto op = get_binary_op(TokenType::BIT_XOR);
   while (op) {
-    auto right = parse_bitand_expression();
+    auto right = parse_bitand_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
     left = make_binary_node(std::move(*left), std::move(*right), *op);
@@ -1396,13 +1388,13 @@ Parser::parse_bitx_expression() {
  * @return AST expression node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_bitand_expression() {
-  auto left = parse_bitshift_expression();
+Parser::parse_bitand_expression(SourceLocation loc) {
+  auto left = parse_bitshift_expression(loc);
   if (!left)
     return std::unexpected(left.error());
   auto op = get_binary_op(TokenType::BIT_AND);
   while (op) {
-    auto right = parse_bitshift_expression();
+    auto right = parse_bitshift_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
     left = make_binary_node(std::move(*left), std::move(*right), *op);
@@ -1425,15 +1417,15 @@ Parser::parse_bitand_expression() {
  * @return AST expression node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_bitshift_expression() {
-  auto left = parse_sum_expression();
+Parser::parse_bitshift_expression(SourceLocation loc) {
+  auto left = parse_sum_expression(loc);
   if (!left)
     return std::unexpected(left.error());
   auto op = get_binary_op(TokenType::LBIT_SHIFT);
   if (!op)
     op = get_binary_op(TokenType::RBIT_SHIFT);
   while (op) {
-    auto right = parse_sum_expression();
+    auto right = parse_sum_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
     left = make_binary_node(std::move(*left), std::move(*right), *op);
@@ -1457,15 +1449,16 @@ Parser::parse_bitshift_expression() {
  *
  * @return AST expression node
  */
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_sum_expression() {
-  auto left = parse_mult_expression();
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_sum_expression(SourceLocation loc) {
+  auto left = parse_mult_expression(loc);
   if (!left)
     return std::unexpected(left.error());
   auto op = get_binary_op(TokenType::PLUS);
   if (!op)
     op = get_binary_op(TokenType::MINUS);
   while (op) {
-    auto right = parse_mult_expression();
+    auto right = parse_mult_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
     left = make_binary_node(std::move(*left), std::move(*right), *op);
@@ -1490,8 +1483,8 @@ std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_sum_expression() {
  * @return AST expression node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_mult_expression() {
-  auto left = parse_unary_expression();
+Parser::parse_mult_expression(SourceLocation loc) {
+  auto left = parse_unary_expression(loc);
   if (!left)
     return std::unexpected(left.error());
   auto op = get_binary_op(TokenType::STAR);
@@ -1500,7 +1493,7 @@ Parser::parse_mult_expression() {
   if (!op)
     op = get_binary_op(TokenType::MODULO);
   while (op) {
-    auto right = parse_unary_expression();
+    auto right = parse_unary_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
     left = make_binary_node(std::move(*left), std::move(*right), *op);
@@ -1525,9 +1518,9 @@ Parser::parse_mult_expression() {
  * @return AST expression node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_unary_expression() {
+Parser::parse_unary_expression(SourceLocation loc) {
   auto op = get_pre_unary_op();
-  auto operand = parse_post_unary_expression();
+  auto operand = parse_post_unary_expression(get_loc());
   if (!op)
     return operand;
 
@@ -1546,8 +1539,8 @@ Parser::parse_unary_expression() {
  * @return AST expression node
  */
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_post_unary_expression() {
-  auto operand = parse_power_expression();
+Parser::parse_post_unary_expression(SourceLocation loc) {
+  auto operand = parse_power_expression(loc);
   auto op = get_post_unary_op();
   if (!op)
     return operand;
@@ -1557,14 +1550,14 @@ Parser::parse_post_unary_expression() {
 }
 
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_power_expression() {
-  auto left = parse_paren_expression();
+Parser::parse_power_expression(SourceLocation loc) {
+  auto left = parse_paren_expression(loc);
   if (!left)
     return std::unexpected(left.error());
   auto op = get_binary_op(TokenType::POWER);
   if (!op)
     return left;
-  auto right = parse_power_expression();
+  auto right = parse_power_expression(get_loc());
   if (!right)
     return std::unexpected(right.error());
 
@@ -1572,21 +1565,21 @@ Parser::parse_power_expression() {
 }
 
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_paren_expression() {
+Parser::parse_paren_expression(SourceLocation loc) {
   if (consume(TokenType::LPAREN)) {
-    auto expression = parse_expression();
+    auto expression = parse_expression(get_loc());
     if (auto paren = consume(TokenType::RPAREN); !paren)
       return std::unexpected(paren.error());
     return expression;
   }
 
-  auto expression = parse_mutable();
+  auto expression = parse_mutable(get_loc());
   if (!expression)
-    expression = parse_immutable();
+    expression = parse_immutable(get_loc());
   if (!expression)
-    expression = parse_enum_construction();
+    expression = parse_enum_construction(get_loc());
   if (!expression)
-    expression = parse_function_call();
+    expression = parse_function_call(get_loc());
   if (!expression)
     return std::unexpected(expression.error());
 
