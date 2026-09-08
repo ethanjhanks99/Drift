@@ -54,7 +54,9 @@ Parser::parse_top_level_decl(SourceLocation loc) {
 
   if (consume(TokenType::IMPORT))
     return parse_import(loc);
-  if (consume(TokenType::FUNC) || expect(TokenType::ATTRIBUTE))
+  if (expect(TokenType::ATTRIBUTE))
+    return parse_attribute(loc);
+  if (consume(TokenType::FUNC))
     return parse_function_definition(loc, vis_mod);
   if (consume(TokenType::STRUCT))
     return parse_struct_definition(loc, vis_mod);
@@ -103,6 +105,19 @@ Parser::parse_import(SourceLocation loc) {
 }
 
 /**
+ * @brief parse attribute
+ * Attributes are tied to specific functions.
+ */
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_attribute(SourceLocation loc) {
+  auto name = consume(TokenType::ATTRIBUTE);
+  if (!name)
+    return std::unexpected(name.error());
+
+  return make_attribute_node(loc, name->lexeme);
+}
+
+/**
  * @brief parses a function definition
  *
  * @astfields
@@ -118,19 +133,6 @@ Parser::parse_import(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_function_definition(SourceLocation loc, VisMod vis_mod) {
-  std::vector<std::unique_ptr<AST>> attributes;
-  auto att = consume(TokenType::ATTRIBUTE);
-  while (att) {
-    attributes.push_back(std::make_unique<Attribute>(att->loc, att->lexeme));
-    att = consume(TokenType::ATTRIBUTE);
-  }
-
-  vis_mod = get_visibility();
-
-  auto keyword = consume(TokenType::FUNC); // skip FUNC keyword
-  if (!keyword)
-    return std::unexpected(keyword.error());
-
   auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
@@ -151,9 +153,9 @@ Parser::parse_function_definition(SourceLocation loc, VisMod vis_mod) {
   if (!block)
     return std::unexpected(block.error());
 
-  return make_func_def_node(loc, std::move(attributes), vis_mod, name->lexeme,
-                            std::move(*gen_dec), std::move(*param_list),
-                            std::move(*ret), std::move(*block));
+  return make_func_def_node(loc, vis_mod, name->lexeme, std::move(*gen_dec),
+                            std::move(*param_list), std::move(*ret),
+                            std::move(*block));
 }
 
 /**
@@ -549,6 +551,15 @@ Parser::parse_trait_block(SourceLocation loc) {
     return std::unexpected(brace.error());
 
   do {
+    if (expect(TokenType::ATTRIBUTE)) {
+      auto attribute = parse_attribute(loc);
+      if (!attribute)
+        return std::unexpected(attribute.error());
+      block.push_back(std::move(*attribute));
+      continue;
+    }
+    if (auto keyword = consume(TokenType::FUNC); !keyword)
+      return std::unexpected(keyword.error());
     auto func = parse_function_declaration(loc);
     if (!func)
       return std::unexpected(func.error());
@@ -621,6 +632,15 @@ Parser::parse_impl_block(SourceLocation loc) {
   std::vector<std::unique_ptr<AST>> implementations;
 
   do {
+    if (expect(TokenType::ATTRIBUTE)) {
+      auto attribute = parse_attribute(loc);
+      if (!attribute)
+        return std::unexpected(attribute.error());
+      implementations.push_back(std::move(*attribute));
+      continue;
+    }
+    if (auto keyword = consume(TokenType::FUNC); !keyword)
+      return std::unexpected(keyword.error());
     auto func = parse_function_definition(loc);
     if (!func)
       return std::unexpected(func.error());

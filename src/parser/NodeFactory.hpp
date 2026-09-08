@@ -13,10 +13,10 @@ std::unique_ptr<AST> make_program_node(SourceLocation loc,
                                        std::vector<std::unique_ptr<AST>> decls);
 std::unique_ptr<AST> make_import_node(SourceLocation loc,
                                       std::string module_name);
+std::unique_ptr<AST> make_attribute_node(SourceLocation loc, std::string name);
 std::unique_ptr<AST>
-make_func_def_node(SourceLocation loc,
-                   std::vector<std::unique_ptr<AST>> attributes, VisMod vis_mod,
-                   std::string name, std::vector<std::unique_ptr<AST>> generics,
+make_func_def_node(SourceLocation loc, VisMod vis_mod, std::string name,
+                   std::vector<std::unique_ptr<AST>> generics,
                    std::vector<std::unique_ptr<AST>> params,
                    std::unique_ptr<AST> function_return,
                    std::vector<std::unique_ptr<AST>> block);

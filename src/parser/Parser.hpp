@@ -52,6 +52,8 @@ private:
   std::expected<std::unique_ptr<AST>, ParseError>
   parse_import(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>
+  parse_attribute(SourceLocation loc);
+  std::expected<std::unique_ptr<AST>, ParseError>
   parse_function_definition(SourceLocation loc, VisMod vis_mod = VisMod::PRIV);
   std::expected<std::unique_ptr<AST>, ParseError>
   parse_function_return(SourceLocation loc);
