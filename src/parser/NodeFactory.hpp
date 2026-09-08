@@ -72,3 +72,8 @@ std::unique_ptr<AST> make_if_node(SourceLocation loc,
 std::unique_ptr<AST> make_while_node(SourceLocation loc, bool do_while,
                                      std::unique_ptr<AST> condition,
                                      std::vector<std::unique_ptr<AST>> block);
+std::unique_ptr<AST> make_for_node(SourceLocation loc,
+                                   std::unique_ptr<AST> condition,
+                                   std::vector<std::unique_ptr<AST>> block);
+std::unique_ptr<AST> make_ranged_node(SourceLocation loc, bool inclusive,
+                                      std::unique_ptr<AST> max_expr);

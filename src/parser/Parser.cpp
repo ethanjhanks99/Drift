@@ -866,8 +866,6 @@ Parser::parse_do_while_statement(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_for_statement(SourceLocation loc) {
-  auto for_loop = std::make_unique<ForStmt>(peek().loc);
-
   if (auto paren = consume(TokenType::LPAREN); !paren)
     return std::unexpected(paren.error());
 
@@ -877,7 +875,6 @@ Parser::parse_for_statement(SourceLocation loc) {
     if (!condition)
       return std::unexpected(condition.error());
   }
-  for_loop->loop_condition = std::move(*condition);
 
   if (auto paren = consume(TokenType::RPAREN); !paren)
     return std::unexpected(paren.error());
@@ -885,9 +882,8 @@ Parser::parse_for_statement(SourceLocation loc) {
   auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
-  for_loop->block = std::move(*block);
 
-  return for_loop;
+  return make_for_node(loc, std::move(*condition), std::move(*block));
 }
 
 /**
@@ -901,9 +897,7 @@ Parser::parse_for_statement(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_ranged(SourceLocation loc) {
-  auto range = std::make_unique<Ranged>(peek().loc);
-
-  auto var = parse_variable_declaration(loc);
+  auto var = parse_variable_definition(loc);
   if (!var)
     return std::unexpected(var.error());
 
@@ -913,21 +907,21 @@ Parser::parse_ranged(SourceLocation loc) {
 
   auto range_type = consume(TokenType::RANGE);
 
+  bool inclusive;
   if (!range_type) {
     range_type = consume(TokenType::RANGE_INCLUSIVE);
     if (!range_type)
       return std::unexpected(range_type.error());
-    range->inclusive = true;
+    inclusive = true;
   } else {
-    range->inclusive = false;
+    inclusive = false;
   }
 
   auto max_expr = parse_expression(get_loc());
   if (!max_expr)
     return std::unexpected(max_expr.error());
-  range->max_exp = std::move(*max_expr);
 
-  return range;
+  return make_ranged_node(loc, inclusive, std::move(*max_expr));
 }
 
 /**
