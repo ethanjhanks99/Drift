@@ -58,7 +58,9 @@ TEST_CASE("Lexer tokenizes attributes", "[lexer]") {
     auto tokens = lexer.scan_tokens();
 
     REQUIRE(tokens[0].type == TokenType::ATTRIBUTE);
-    REQUIRE(tokens[0].lexeme == "unsafe");
+    REQUIRE(tokens[0].lexeme == "@");
+    REQUIRE(tokens[1].type == TokenType::IDENTIFIER);
+    REQUIRE(tokens[1].lexeme == "unsafe");
   }
 
   SECTION("Two attributes") {
@@ -69,9 +71,13 @@ TEST_CASE("Lexer tokenizes attributes", "[lexer]") {
     }
 
     REQUIRE(tokens[0].type == TokenType::ATTRIBUTE);
-    REQUIRE(tokens[0].lexeme == "unsafe");
-    REQUIRE(tokens[1].type == TokenType::ATTRIBUTE);
-    REQUIRE(tokens[1].lexeme == "io");
+    REQUIRE(tokens[0].lexeme == "@");
+    REQUIRE(tokens[1].type == TokenType::IDENTIFIER);
+    REQUIRE(tokens[1].lexeme == "unsafe");
+    REQUIRE(tokens[2].type == TokenType::ATTRIBUTE);
+    REQUIRE(tokens[2].lexeme == "@");
+    REQUIRE(tokens[3].type == TokenType::IDENTIFIER);
+    REQUIRE(tokens[3].lexeme == "io");
   }
 }
 

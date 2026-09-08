@@ -208,8 +208,7 @@ void Lexer::scan_token() {
     break;
 
   case '@':
-    advance();
-    handle_attribute();
+    add_token(TokenType::ATTRIBUTE);
     break;
   case '"':
     string();
@@ -234,15 +233,6 @@ void Lexer::scan_token() {
     }
     break;
   }
-}
-
-void Lexer::handle_attribute() {
-  while ((isalpha(peek()) || peek() == '_')) {
-    advance();
-  }
-
-  std::string att_name = source.substr(start + 1, current - start - 1);
-  add_token(TokenType::ATTRIBUTE, att_name);
 }
 
 void Lexer::string() {
