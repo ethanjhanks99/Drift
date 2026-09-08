@@ -54,7 +54,7 @@ Parser::parse_top_level_decl(SourceLocation loc) {
 
   if (consume(TokenType::IMPORT))
     return parse_import(loc);
-  if (expect(TokenType::ATTRIBUTE))
+  if (consume(TokenType::ATTRIBUTE))
     return parse_attribute(loc);
   if (consume(TokenType::FUNC))
     return parse_function_definition(loc, vis_mod);
@@ -110,7 +110,7 @@ Parser::parse_import(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_attribute(SourceLocation loc) {
-  auto name = consume(TokenType::ATTRIBUTE);
+  auto name = consume(TokenType::IDENTIFIER);
   if (!name)
     return std::unexpected(name.error());
 
@@ -551,7 +551,7 @@ Parser::parse_trait_block(SourceLocation loc) {
     return std::unexpected(brace.error());
 
   do {
-    if (expect(TokenType::ATTRIBUTE)) {
+    if (consume(TokenType::ATTRIBUTE)) {
       auto attribute = parse_attribute(loc);
       if (!attribute)
         return std::unexpected(attribute.error());
@@ -632,7 +632,7 @@ Parser::parse_impl_block(SourceLocation loc) {
   std::vector<std::unique_ptr<AST>> implementations;
 
   do {
-    if (expect(TokenType::ATTRIBUTE)) {
+    if (consume(TokenType::ATTRIBUTE)) {
       auto attribute = parse_attribute(loc);
       if (!attribute)
         return std::unexpected(attribute.error());
