@@ -192,27 +192,6 @@ std::optional<BinaryOp> Parser::get_binary_op(TokenType token) {
 }
 
 /**
- * @brief create a binary comparison AST node
- *
- * @params
- * left (AST):        the left side of the operation
- * right (AST):       the right side of the operation
- * op (BinaryOp):     the comparative operation
- *
- * @return BinaryExpr AST node
- */
-std::unique_ptr<AST> Parser::make_binary_node(std::unique_ptr<AST> left,
-                                              std::unique_ptr<AST> right,
-                                              BinaryOp op) {
-  auto new_node = std::make_unique<BinaryExpr>(left->loc);
-  new_node->left = std::move(left);
-  new_node->right = std::move(right);
-  new_node->op = op;
-
-  return new_node;
-}
-
-/**
  * @brief get unary operator
  *
  * @return UnaryOp
@@ -245,24 +224,4 @@ std::optional<UnaryOp> Parser::get_post_unary_op() {
   }
 
   return {};
-}
-
-/**
- * @brief make unary AST node
- *
- * @params
- * operand (AST):   operand for the expression
- * op (UnaryOp):    unary operator
- *
- * @return UnaryExpr AST node
- */
-std::unique_ptr<AST> Parser::make_unary_node(std::unique_ptr<AST> operand,
-                                             UnaryOp op, bool prefix) {
-  auto node = std::make_unique<UnaryExpr>(operand->loc);
-
-  node->operand = std::move(operand);
-  node->op = op;
-  node->prefix = prefix;
-
-  return node;
 }

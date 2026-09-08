@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tools/AST.hpp"
+#include "tools/AssignOp.hpp"
 #include "tools/OwnershipMod.hpp"
 #include "tools/SourceLocation.hpp"
 #include "tools/Type.hpp"
@@ -85,3 +86,24 @@ std::unique_ptr<AST> make_foreach_node(SourceLocation loc,
                                        std::unique_ptr<AST> mut);
 std::unique_ptr<AST> make_loop_node(SourceLocation loc,
                                     std::vector<std::unique_ptr<AST>> block);
+std::unique_ptr<AST> make_asm_node(SourceLocation loc,
+                                   std::vector<std::unique_ptr<AST>> block);
+std::unique_ptr<AST> make_match_node(SourceLocation loc,
+                                     std::unique_ptr<AST> mut,
+                                     std::vector<std::unique_ptr<AST>> block);
+std::unique_ptr<AST>
+make_match_option_node(SourceLocation loc, std::unique_ptr<AST> expr,
+                       std::vector<std::unique_ptr<AST>> block);
+std::unique_ptr<AST> make_assignment_node(SourceLocation loc,
+                                          std::unique_ptr<AST> mut, AssignOp op,
+                                          std::unique_ptr<AST> expr);
+std::unique_ptr<AST> make_return_node(SourceLocation loc,
+                                      std::unique_ptr<AST> ret_value);
+std::unique_ptr<AST> make_break_node(SourceLocation loc,
+                                     std::unique_ptr<AST> break_value);
+std::unique_ptr<AST> make_binary_node(SourceLocation loc,
+                                      std::unique_ptr<AST> left,
+                                      std::unique_ptr<AST> right, BinaryOp op);
+std::unique_ptr<AST> make_unary_node(SourceLocation loc,
+                                     std::unique_ptr<AST> operand, UnaryOp op,
+                                     bool prefix);

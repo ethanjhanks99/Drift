@@ -46,11 +46,7 @@ Parser::parse_program(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_top_level_decl(SourceLocation loc) {
-  VisMod vis_mod = VisMod::PRIV;
-  if (auto pub = consume(TokenType::PUB); pub)
-    vis_mod = VisMod::PUB;
-  else
-    auto priv = consume(TokenType::PRIV);
+  VisMod vis_mod = get_visibility();
 
   if (consume(TokenType::IMPORT))
     return parse_import(loc);
@@ -977,17 +973,11 @@ Parser::parse_loop_statement(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_assembly_statement(SourceLocation loc) {
-  if (auto keyword = consume(TokenType::ASM); !keyword)
-    return std::unexpected(keyword.error());
-
-  auto asm_stmt = std::make_unique<AsmStmt>(peek().loc);
-
   auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
-  asm_stmt->block = std::move(*block);
 
-  return asm_stmt;
+  return make_asm_node(loc, std::move(*block));
 }
 
 /**
@@ -1001,22 +991,15 @@ Parser::parse_assembly_statement(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_match_statement(SourceLocation loc) {
-  if (auto keyword = consume(TokenType::MATCH); !keyword)
-    return std::unexpected(keyword.error());
-
-  auto match = std::make_unique<MatchStmt>(peek().loc);
-
   auto mut = parse_mutable(get_loc());
   if (!mut)
     return std::unexpected(mut.error());
-  match->mut = std::move(*mut);
 
   auto block = parse_match_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
-  match->block = std::move(*block);
 
-  return match;
+  return make_match_node(loc, std::move(*mut), std::move(*block));
 }
 
 /**
@@ -1067,12 +1050,9 @@ Parser::parse_match_options(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_match_option(SourceLocation loc) {
-  auto option = std::make_unique<MatchOption>(peek().loc);
-
   auto val = parse_expression(get_loc());
   if (!val)
     return std::unexpected(val.error());
-  option->comp = std::move(*val);
 
   if (auto arrow = consume(TokenType::MATCH_ARROW); !arrow)
     return std::unexpected(arrow.error());
@@ -1080,9 +1060,8 @@ Parser::parse_match_option(SourceLocation loc) {
   auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
-  option->block = std::move(*block);
 
-  return option;
+  return make_match_option_node(loc, std::move(*val), std::move(*block));
 }
 
 /**
@@ -1096,27 +1075,25 @@ Parser::parse_simple_statement(SourceLocation loc) {
   std::unique_ptr<AST> decl;
   switch (peek().type) {
   case TokenType::CONST:
+    decl = std::move(
+        *parse_variable_definition(loc, VisMod::PRIV, OwnershipMod::CONST));
+    break;
   case TokenType::REF:
+    decl = std::move(
+        *parse_variable_definition(loc, VisMod::PRIV, OwnershipMod::REF));
+    break;
   case TokenType::SHARED:
+    decl = std::move(
+        *parse_variable_definition(loc, VisMod::PRIV, OwnershipMod::SHARED));
+    break;
   case TokenType::OWNED:
     decl = std::move(*parse_variable_definition(loc));
     break;
   case TokenType::IDENTIFIER:
     if (look_ahead().type == TokenType::COLON)
       decl = std::move(*parse_variable_definition(loc));
-    else {
-      switch (look_ahead().type) {
-      case TokenType::ASSIGN:
-      case TokenType::PLUS_EQUALS:
-      case TokenType::MINUS_EQUALS:
-      case TokenType::MULT_EQUALS:
-      case TokenType::DIVIDE_EQUALS:
-        decl = std::move(*parse_assignment(loc));
-        break;
-      default:
-        break;
-      }
-    }
+    else
+      decl = std::move(*parse_assignment(loc));
     break;
   case TokenType::RETURN:
     decl = std::move(*parse_return_statement(loc));
@@ -1152,24 +1129,19 @@ Parser::parse_simple_statement(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_assignment(SourceLocation loc) {
-  auto assign = std::make_unique<Assignment>(peek().loc);
-
   auto mut = parse_mutable(get_loc());
   if (!mut)
     return std::unexpected(mut.error());
-  assign->mut = std::move(*mut);
 
   auto op = get_assign_op();
   if (!op)
     return std::unexpected(op.error());
-  assign->op = *op;
 
   auto expr = parse_expression(get_loc());
   if (!expr)
     return std::unexpected(expr.error());
-  assign->expression = std::move(*expr);
 
-  return assign;
+  return make_assignment_node(loc, std::move(*mut), *op, std::move(*expr));
 }
 
 /**
@@ -1182,16 +1154,9 @@ Parser::parse_assignment(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_return_statement(SourceLocation loc) {
-  if (auto keyword = consume(TokenType::RETURN); !keyword)
-    return std::unexpected(keyword.error());
-
-  auto ret_stmt = std::make_unique<Return>(peek().loc);
-
   auto ret_value = parse_expression(get_loc());
-  if (ret_value)
-    ret_stmt->return_value = std::move(*ret_value);
 
-  return ret_stmt;
+  return make_return_node(loc, std::move(*ret_value));
 }
 
 /**
@@ -1206,16 +1171,8 @@ Parser::parse_return_statement(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_break_statement(SourceLocation loc) {
-  if (auto keyword = consume(TokenType::BREAK); !keyword)
-    return std::unexpected(keyword.error());
-
-  auto break_stmt = std::make_unique<Break>(peek().loc);
-
   auto break_value = parse_expression(get_loc());
-  if (break_value)
-    break_stmt->break_value = std::move(*break_value);
-
-  return break_stmt;
+  return make_break_node(loc, std::move(*break_value));
 }
 
 /**
@@ -1235,7 +1192,7 @@ Parser::parse_expression(SourceLocation loc) {
     auto right = parse_or_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
-    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    left = make_binary_node(loc, std::move(*left), std::move(*right), *op);
     op = get_compare_op();
   }
 
@@ -1264,7 +1221,7 @@ Parser::parse_or_expression(SourceLocation loc) {
     auto right = parse_and_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
-    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    left = make_binary_node(loc, std::move(*left), std::move(*right), *op);
     op = get_binary_op(TokenType::OR);
   }
 
@@ -1293,7 +1250,7 @@ Parser::parse_and_expression(SourceLocation loc) {
     auto right = parse_bitor_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
-    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    left = make_binary_node(loc, std::move(*left), std::move(*right), *op);
     op = get_binary_op(TokenType::AND);
   }
 
@@ -1322,7 +1279,7 @@ Parser::parse_bitor_expression(SourceLocation loc) {
     auto right = parse_bitx_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
-    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    left = make_binary_node(loc, std::move(*left), std::move(*right), *op);
     op = get_binary_op(TokenType::BIT_OR);
   }
 
@@ -1351,7 +1308,7 @@ Parser::parse_bitx_expression(SourceLocation loc) {
     auto right = parse_bitand_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
-    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    left = make_binary_node(loc, std::move(*left), std::move(*right), *op);
     op = get_binary_op(TokenType::BIT_XOR);
   }
 
@@ -1380,7 +1337,7 @@ Parser::parse_bitand_expression(SourceLocation loc) {
     auto right = parse_bitshift_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
-    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    left = make_binary_node(loc, std::move(*left), std::move(*right), *op);
     op = get_binary_op(TokenType::BIT_AND);
   }
 
@@ -1411,7 +1368,7 @@ Parser::parse_bitshift_expression(SourceLocation loc) {
     auto right = parse_sum_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
-    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    left = make_binary_node(loc, std::move(*left), std::move(*right), *op);
     op = get_binary_op(TokenType::LBIT_SHIFT);
     if (!op)
       op = get_binary_op(TokenType::RBIT_SHIFT);
@@ -1444,7 +1401,7 @@ Parser::parse_sum_expression(SourceLocation loc) {
     auto right = parse_mult_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
-    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    left = make_binary_node(loc, std::move(*left), std::move(*right), *op);
     op = get_binary_op(TokenType::PLUS);
     if (!op)
       get_binary_op(TokenType::MINUS);
@@ -1479,7 +1436,7 @@ Parser::parse_mult_expression(SourceLocation loc) {
     auto right = parse_unary_expression(get_loc());
     if (!right)
       return std::unexpected(right.error());
-    left = make_binary_node(std::move(*left), std::move(*right), *op);
+    left = make_binary_node(loc, std::move(*left), std::move(*right), *op);
     op = get_binary_op(TokenType::STAR);
     if (!op)
       op = get_binary_op(TokenType::SLASH);
@@ -1507,7 +1464,7 @@ Parser::parse_unary_expression(SourceLocation loc) {
   if (!op)
     return operand;
 
-  operand = make_unary_node(std::move(*operand), *op, true);
+  operand = make_unary_node(loc, std::move(*operand), *op, true);
   return operand;
 }
 
@@ -1528,7 +1485,7 @@ Parser::parse_post_unary_expression(SourceLocation loc) {
   if (!op)
     return operand;
 
-  operand = make_unary_node(std::move(*operand), *op, false);
+  operand = make_unary_node(loc, std::move(*operand), *op, false);
   return operand;
 }
 
@@ -1544,7 +1501,7 @@ Parser::parse_power_expression(SourceLocation loc) {
   if (!right)
     return std::unexpected(right.error());
 
-  return make_binary_node(std::move(*left), std::move(*right), *op);
+  return make_binary_node(loc, std::move(*left), std::move(*right), *op);
 }
 
 std::expected<std::unique_ptr<AST>, ParseError>

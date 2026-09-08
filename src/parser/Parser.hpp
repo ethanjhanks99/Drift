@@ -39,11 +39,6 @@ private:
   std::optional<BinaryOp> get_binary_op(TokenType token);
   std::optional<UnaryOp> get_pre_unary_op();
   std::optional<UnaryOp> get_post_unary_op();
-  std::unique_ptr<AST> make_binary_node(std::unique_ptr<AST> left,
-                                        std::unique_ptr<AST> right,
-                                        BinaryOp op);
-  std::unique_ptr<AST> make_unary_node(std::unique_ptr<AST> operand, UnaryOp op,
-                                       bool prefix);
 
   std::expected<std::unique_ptr<AST>, ParseError>
   parse_program(SourceLocation loc);
