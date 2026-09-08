@@ -75,5 +75,13 @@ std::unique_ptr<AST> make_while_node(SourceLocation loc, bool do_while,
 std::unique_ptr<AST> make_for_node(SourceLocation loc,
                                    std::unique_ptr<AST> condition,
                                    std::vector<std::unique_ptr<AST>> block);
-std::unique_ptr<AST> make_ranged_node(SourceLocation loc, bool inclusive,
+std::unique_ptr<AST> make_ranged_node(SourceLocation loc,
+                                      std::unique_ptr<AST> var,
+                                      std::unique_ptr<AST> min_expr,
+                                      bool inclusive,
                                       std::unique_ptr<AST> max_expr);
+std::unique_ptr<AST> make_foreach_node(SourceLocation loc,
+                                       std::unique_ptr<AST> var,
+                                       std::unique_ptr<AST> mut);
+std::unique_ptr<AST> make_loop_node(SourceLocation loc,
+                                    std::vector<std::unique_ptr<AST>> block);

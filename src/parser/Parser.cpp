@@ -921,7 +921,8 @@ Parser::parse_ranged(SourceLocation loc) {
   if (!max_expr)
     return std::unexpected(max_expr.error());
 
-  return make_ranged_node(loc, inclusive, std::move(*max_expr));
+  return make_ranged_node(loc, std::move(*var), std::move(*min_expr), inclusive,
+                          std::move(*max_expr));
 }
 
 /**
@@ -935,12 +936,9 @@ Parser::parse_ranged(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_foreach(SourceLocation loc) {
-  auto for_each = std::make_unique<ForEach>(peek().loc);
-
   auto var = parse_variable_declaration(loc);
   if (!var)
     return std::unexpected(var.error());
-  for_each->var_decl = std::move(*var);
 
   if (auto colon = consume(TokenType::COLON); !colon)
     return std::unexpected(colon.error());
@@ -948,9 +946,8 @@ Parser::parse_foreach(SourceLocation loc) {
   auto mut = parse_mutable(get_loc());
   if (!mut)
     return std::unexpected(mut.error());
-  for_each->mut = std::move(*mut);
 
-  return for_each;
+  return make_foreach_node(loc, std::move(*var), std::move(*mut));
 }
 
 /**
@@ -963,17 +960,11 @@ Parser::parse_foreach(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_loop_statement(SourceLocation loc) {
-  if (auto keyword = consume(TokenType::LOOP); !keyword)
-    return std::unexpected(keyword.error());
-
-  auto loop = std::make_unique<LoopStmt>(peek().loc);
-
   auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
-  loop->block = std::move(*block);
 
-  return loop;
+  return make_loop_node(loc, std::move(*block));
 }
 
 /**
