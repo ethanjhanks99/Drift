@@ -66,3 +66,9 @@ std::unique_ptr<AST> make_var_decl_node(SourceLocation loc, VisMod vis_mod,
                                         std::string name,
                                         std::unique_ptr<AST> array_size,
                                         Type type);
+std::unique_ptr<AST> make_if_node(SourceLocation loc,
+                                  std::unique_ptr<AST> condition,
+                                  std::vector<std::unique_ptr<AST>> block);
+std::unique_ptr<AST> make_while_node(SourceLocation loc, bool do_while,
+                                     std::unique_ptr<AST> condition,
+                                     std::vector<std::unique_ptr<AST>> block);

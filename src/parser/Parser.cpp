@@ -780,22 +780,18 @@ Parser::parse_statement(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_if_statement(SourceLocation loc) {
-  auto if_stmt = std::make_unique<IfStmt>(peek().loc);
-
   if (auto paren = consume(TokenType::LPAREN); !paren)
     return std::unexpected(paren.error());
 
-  auto exp = parse_expression(get_loc());
-  if (!exp)
-    return std::unexpected(exp.error());
-  if_stmt->condition = std::move(*exp);
+  auto condition = parse_expression(get_loc());
+  if (!condition)
+    return std::unexpected(condition.error());
 
   auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
-  if_stmt->block = std::move(*block);
 
-  return if_stmt;
+  return make_if_node(loc, std::move(*condition), std::move(*block));
 }
 
 /**
@@ -810,20 +806,12 @@ Parser::parse_if_statement(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_while_statement(SourceLocation loc) {
-  auto while_stmt = std::make_unique<WhileStmt>(peek().loc);
-
-  while_stmt->do_while = false;
-
-  if (auto keyword = consume(TokenType::WHILE); !keyword)
-    return std::unexpected(keyword.error());
-
   if (auto paren = consume(TokenType::LPAREN); !paren)
     return std::unexpected(paren.error());
 
-  auto expr = parse_expression(get_loc());
-  if (!expr)
-    return std::unexpected(expr.error());
-  while_stmt->loop_condition = std::move(*expr);
+  auto condition = parse_expression(get_loc());
+  if (!condition)
+    return std::unexpected(condition.error());
 
   if (auto paren = consume(TokenType::RPAREN); !paren)
     return std::unexpected(paren.error());
@@ -831,9 +819,8 @@ Parser::parse_while_statement(SourceLocation loc) {
   auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
-  while_stmt->block = std::move(*block);
 
-  return while_stmt;
+  return make_while_node(loc, false, std::move(*condition), std::move(*block));
 }
 
 /**
@@ -848,17 +835,9 @@ Parser::parse_while_statement(SourceLocation loc) {
  */
 std::expected<std::unique_ptr<AST>, ParseError>
 Parser::parse_do_while_statement(SourceLocation loc) {
-  auto while_stmt = std::make_unique<WhileStmt>(peek().loc);
-
-  while_stmt->do_while = true;
-
-  if (auto keyword = consume(TokenType::DO); !keyword)
-    return std::unexpected(keyword.error());
-
   auto block = parse_block(get_loc());
   if (!block)
     return std::unexpected(block.error());
-  while_stmt->block = std::move(*block);
 
   if (auto keyword = consume(TokenType::WHILE); !keyword)
     return std::unexpected(keyword.error());
@@ -869,12 +848,11 @@ Parser::parse_do_while_statement(SourceLocation loc) {
   auto expr = parse_expression(get_loc());
   if (!expr)
     return std::unexpected(expr.error());
-  while_stmt->loop_condition = std::move(*expr);
 
   if (auto paren = consume(TokenType::RPAREN); !paren)
     return std::unexpected(paren.error());
 
-  return while_stmt;
+  return make_while_node(loc, true, std::move(*expr), std::move(*block));
 }
 
 /**
