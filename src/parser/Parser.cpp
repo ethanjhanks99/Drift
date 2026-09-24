@@ -1525,3 +1525,6 @@ Parser::parse_paren_expression(SourceLocation loc) {
 
   return expression;
 }
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_function_call(SourceLocation loc) {}

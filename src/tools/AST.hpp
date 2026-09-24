@@ -277,7 +277,6 @@ struct Immutable : AST {
 
 struct Call : AST {
   std::unique_ptr<AST> module_access;
-  std::unique_ptr<AST> impl_access;
   std::vector<std::unique_ptr<AST>> args;
   std::string name;
 
