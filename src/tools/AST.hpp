@@ -264,7 +264,6 @@ struct Mutable : AST {
   std::string name;
   std::unique_ptr<AST> array_access;
   std::unique_ptr<AST> point_access;
-  Type type;
 
   Mutable(SourceLocation loc) : AST(NodeType::MUTABLE, loc) {}
 };
@@ -276,9 +275,25 @@ struct Immutable : AST {
 };
 
 struct Call : AST {
-  std::unique_ptr<AST> module_access;
   std::vector<std::unique_ptr<AST>> args;
+  std::vector<std::unique_ptr<AST>> array_access;
+  std::vector<std::unique_ptr<AST>> point_access;
   std::string name;
 
   Call(SourceLocation loc) : AST(NodeType::CALL, loc) {}
+};
+
+struct ModuleExpr : AST {
+  std::string name;
+  std::unique_ptr<AST> expr;
+
+  ModuleExpr(SourceLocation loc) : AST(NodeType::MODULE_EXPR, loc) {}
+};
+
+struct EnumConstruct : AST {
+  std::string name;
+  std::string enum_val;
+  std::vector<std::unique_ptr<AST>> fields;
+
+  EnumConstruct(SourceLocation loc) : AST(NodeType::ENUM_CONST, loc) {}
 };

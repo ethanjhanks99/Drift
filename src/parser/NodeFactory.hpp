@@ -107,3 +107,13 @@ std::unique_ptr<AST> make_binary_node(SourceLocation loc,
 std::unique_ptr<AST> make_unary_node(SourceLocation loc,
                                      std::unique_ptr<AST> operand, UnaryOp op,
                                      bool prefix);
+std::unique_ptr<AST>
+make_call_node(SourceLocation loc, std::string name,
+               std::vector<std::unique_ptr<AST>> args,
+               std::vector<std::unique_ptr<AST>> array_access,
+               std::vector<std::unique_ptr<AST>> point_access);
+std::unique_ptr<AST> make_module_expr_node(SourceLocation loc, std::string name,
+                                           std::unique_ptr<AST> expr);
+std::unique_ptr<AST>
+make_enum_const_node(SourceLocation loc, std::string name, std::string val,
+                     std::vector<std::unique_ptr<AST>> field_assignments);

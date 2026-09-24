@@ -1,5 +1,6 @@
 #include "Parser.hpp"
 #include "NodeFactory.hpp"
+#include "build/_deps/catch2-src/src/catch2/internal/catch_meta.hpp"
 #include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
@@ -9,6 +10,7 @@
 #include "tools/VisMod.hpp"
 #include <expected>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -1513,11 +1515,11 @@ Parser::parse_paren_expression(SourceLocation loc) {
     return expression;
   }
 
-  auto expression = parse_mutable(get_loc());
+  auto expression = parse_module_expression(get_loc());
+  if (!expression)
+    expression = parse_mutable(get_loc());
   if (!expression)
     expression = parse_immutable(get_loc());
-  if (!expression)
-    expression = parse_enum_construction(get_loc());
   if (!expression)
     expression = parse_function_call(get_loc());
   if (!expression)
@@ -1527,4 +1529,127 @@ Parser::parse_paren_expression(SourceLocation loc) {
 }
 
 std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_function_call(SourceLocation loc) {}
+Parser::parse_function_call(SourceLocation loc) {
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
+
+  if (auto paren = consume(TokenType::LPAREN); !paren)
+    return std::unexpected(paren.error());
+
+  auto args = parse_argument_list(get_loc());
+  if (!args)
+    return std::unexpected(args.error());
+
+  if (auto paren = consume(TokenType::RPAREN); !paren)
+    return std::unexpected(paren.error());
+
+  std::vector<std::unique_ptr<AST>> array_access;
+  while (peek().type == TokenType::LBRACKET) {
+    auto access = parse_array_access(get_loc());
+    if (!access)
+      return std::unexpected(access.error());
+    array_access.push_back(std::move(*access));
+  }
+
+  std::vector<std::unique_ptr<AST>> point_access;
+  while (consume(TokenType::DOT)) {
+    auto point = parse_point_access(get_loc());
+    if (!point)
+      return std::unexpected(point.error());
+    point_access.push_back(std::move(*point));
+  }
+
+  return make_call_node(loc, name->lexeme, std::move(*args),
+                        std::move(array_access), std::move(point_access));
+}
+
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_argument_list(SourceLocation loc) {
+  std::vector<std::unique_ptr<AST>> args;
+
+  while (peek().type != TokenType::RPAREN) {
+    auto arg = parse_expression(get_loc());
+    if (!arg)
+      return std::unexpected(arg.error());
+    args.push_back(std::move(*arg));
+  }
+
+  return args;
+}
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_array_access(SourceLocation loc) {
+  if (auto bracket = consume(TokenType::LBRACKET); !bracket)
+    return std::unexpected(bracket.error());
+  auto expr = parse_expression(loc);
+  if (!expr)
+    return std::unexpected(expr.error());
+  if (auto bracket = consume(TokenType::RBRACKET); !bracket)
+    return std::unexpected(bracket.error());
+
+  return expr;
+}
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_point_access(SourceLocation loc) {
+  if (look_ahead().type == TokenType::LPAREN) {
+    return parse_function_call(loc);
+  }
+  return parse_mutable(loc);
+}
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_module_expression(SourceLocation loc) {
+  auto name = consume(TokenType::IDENTIFIER);
+  if (!name)
+    return std::unexpected(name.error());
+
+  if (auto colons = consume(TokenType::COLON_COLON); !colons)
+    return std::unexpected(colons.error());
+
+  if (peek().type == TokenType::IDENTIFIER) {
+    if (look_ahead().type == TokenType::LBRACE ||
+        look_ahead().type == TokenType::SEMICOLON)
+      return parse_enum_construction(get_loc(), *name);
+  }
+
+  auto expr = parse_expression(get_loc());
+  if (!expr)
+    return std::unexpected(expr.error());
+
+  return make_module_expr_node(loc, name->lexeme, std::move(*expr));
+}
+
+std::expected<std::unique_ptr<AST>, ParseError>
+Parser::parse_enum_construction(SourceLocation loc, Token name) {
+  auto val = consume(TokenType::IDENTIFIER);
+  if (!val)
+    return std::unexpected(val.error());
+
+  auto fields = parse_field_assignment(get_loc());
+  if (!fields)
+    return std::unexpected(fields.error());
+
+  return make_enum_const_node(loc, name.lexeme, val->lexeme,
+                              std::move(*fields));
+}
+
+std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
+Parser::parse_field_assignment(SourceLocation loc) {
+  std::vector<std::unique_ptr<AST>> fields;
+  if (auto brace = consume(TokenType::LBRACE); !brace)
+    return fields;
+
+  do {
+    auto field = parse_assignment(get_loc());
+    if (!field)
+      return std::unexpected(field.error());
+    fields.push_back(std::move(*field));
+  } while (!consume(TokenType::COMMA));
+
+  if (auto brace = consume(TokenType::RBRACE); !brace)
+    return std::unexpected(brace.error());
+
+  return fields;
+}

@@ -49,4 +49,6 @@ enum class NodeType {
   FUNCTION_CALL,
   CALL,
   ARGUMENT_LIST,
+  MODULE_EXPR,
+  ENUM_CONST,
 };

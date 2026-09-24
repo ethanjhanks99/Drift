@@ -165,14 +165,12 @@ private:
   std::expected<std::unique_ptr<AST>, ParseError>
   parse_function_call(SourceLocation loc);
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-  parse_calls(SourceLocation loc);
-  std::expected<std::unique_ptr<AST>, ParseError>
-  parse_call(SourceLocation loc);
-  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_argument_list(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>
-  parse_enum_construction(SourceLocation loc);
+  parse_module_expression(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>
+  parse_enum_construction(SourceLocation loc, Token name);
+  std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_field_assignment(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>
   parse_struct_type(SourceLocation loc);
