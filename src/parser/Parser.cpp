@@ -1,6 +1,5 @@
 #include "Parser.hpp"
 #include "NodeFactory.hpp"
-#include "build/_deps/catch2-src/src/catch2/internal/catch_meta.hpp"
 #include "error/ErrorHandler.hpp"
 #include "lexer/Token.hpp"
 #include "tools/AST.hpp"
