@@ -5,6 +5,7 @@ set(HEADER_FILES
 
 set(SOURCE_FILES
     Parser.cpp
+    ParserHelper.cpp
     NodeFactory.cpp)
 
 add_library(${PROJECT})

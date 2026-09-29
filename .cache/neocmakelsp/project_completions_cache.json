@@ -1,6 +1,46 @@
 {
-  "date": "2026-09-10T14:55:21.691598841-06:00",
+  "date": "2026-09-27T03:25:56.318986746Z",
   "data": {
+    "/home/ethanks/Projects/compilers/Drift/src/parser/CMakeLists.txt": [
+      {
+        "label": "PROJECT",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /home/ethanks/Projects/compilers/Drift/src/parser/CMakeLists.txt"
+      },
+      {
+        "label": "HEADER_FILES",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /home/ethanks/Projects/compilers/Drift/src/parser/CMakeLists.txt"
+      },
+      {
+        "label": "SOURCE_FILES",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /home/ethanks/Projects/compilers/Drift/src/parser/CMakeLists.txt"
+      }
+    ],
+    "/home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt": [
+      {
+        "label": "PROJECT",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt"
+      },
+      {
+        "label": "HEADER_FILES",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt"
+      },
+      {
+        "label": "SOURCE_FILES",
+        "kind": 12,
+        "detail": "Value",
+        "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt"
+      }
+    ],
     "/home/ethanh/Projects/compilers/Drift/src/tools/CMakeLists.txt": [
       {
         "label": "PROJECT",
@@ -1535,26 +1575,6 @@
         "kind": 12,
         "detail": "Value",
         "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/parser/CMakeLists.txt"
-      }
-    ],
-    "/home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt": [
-      {
-        "label": "PROJECT",
-        "kind": 12,
-        "detail": "Value",
-        "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt"
-      },
-      {
-        "label": "HEADER_FILES",
-        "kind": 12,
-        "detail": "Value",
-        "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt"
-      },
-      {
-        "label": "SOURCE_FILES",
-        "kind": 12,
-        "detail": "Value",
-        "documentation": "defined variable\nfrom: /home/ethanh/Projects/compilers/Drift/src/lexer/CMakeLists.txt"
       }
     ]
   }
