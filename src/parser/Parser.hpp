@@ -173,7 +173,7 @@ private:
   std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
   parse_field_assignment(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>
-  parse_struct_type(SourceLocation loc);
+  parse_custom_type(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>
   parse_generic_definition(SourceLocation loc);
   std::expected<std::unique_ptr<AST>, ParseError>

@@ -1653,7 +1653,7 @@ Parser::parse_field_assignment(SourceLocation loc) {
   return fields;
 }
 
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_struct_type(SourceLocation loc) {
+std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_custom_type(SourceLocation loc) {
   auto module = parse_module_access(loc);
 
 }

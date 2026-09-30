@@ -297,3 +297,10 @@ struct EnumConstruct : AST {
 
   EnumConstruct(SourceLocation loc) : AST(NodeType::ENUM_CONST, loc) {}
 };
+
+struct CustomType : AST {
+  std::unique_ptr<AST> module;
+  std::string name;
+
+  CustomType(SourceLocation loc) : AST(NodeType::TYPE, loc) {}
+};

@@ -133,7 +133,7 @@ std::expected<Type, ParseError> Parser::get_type() {
 
   if (consume(TokenType::END_OF_FILE))
     return std::unexpected(ParseError::UnexpectedEOF);
-  return std::unexpected(ParseError::UnexpectedToken);
+  return Type::CUSTOM;
 }
 
 /**

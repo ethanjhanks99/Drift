@@ -51,4 +51,5 @@ enum class NodeType {
   ARGUMENT_LIST,
   MODULE_EXPR,
   ENUM_CONST,
+  TYPE,
 };
