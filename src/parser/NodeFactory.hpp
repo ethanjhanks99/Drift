@@ -1,11 +1,11 @@
 #pragma once
 
-#include "tools/AST.hpp"
-#include "tools/AssignOp.hpp"
-#include "tools/OwnershipMod.hpp"
-#include "tools/SourceLocation.hpp"
-#include "tools/Type.hpp"
-#include "tools/VisMod.hpp"
+#include "AST.hpp"
+#include "AssignOp.hpp"
+#include "OwnershipMod.hpp"
+#include "SourceLocation.hpp"
+#include "Type.hpp"
+#include "VisMod.hpp"
 #include <memory>
 #include <string>
 #include <vector>

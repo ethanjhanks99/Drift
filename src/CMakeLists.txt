@@ -1,4 +1,9 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.23)
+set(PROJECT driftc)
+set(TESTS drift_tests)
+
+project(${PROJECT})
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -13,33 +18,23 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Catch2)
 
-set(PROJECT driftc)
-
-set(TESTS drift_tests)
-
-project(${PROJECT})
+add_subdirectory(lexer)
+add_subdirectory(parser)
+add_subdirectory(tools)
+add_subdirectory(error)
 
 add_executable(${PROJECT} main.cpp)
 
 add_executable(${TESTS}
   tests/lexer/lexer_tests.cpp)
 
-add_subdirectory(lexer)
-add_subdirectory(parser)
-add_subdirectory(tools)
-add_subdirectory(error)
-
 target_link_libraries(${PROJECT}
-  drift_lexer
-  drift_parser
-  drift_tools
+  PRIVATE
+    drift_parser
 )
 target_link_libraries(${TESTS}
   PRIVATE
-    drift_lexer
     drift_parser
-    drift_tools
-    drift_error
     Catch2::Catch2WithMain
 )
 

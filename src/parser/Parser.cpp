@@ -1,12 +1,12 @@
 #include "Parser.hpp"
 #include "NodeFactory.hpp"
-#include "error/ErrorHandler.hpp"
-#include "lexer/Token.hpp"
-#include "tools/AST.hpp"
-#include "tools/OwnershipMod.hpp"
-#include "tools/ParseError.hpp"
-#include "tools/SourceLocation.hpp"
-#include "tools/VisMod.hpp"
+#include "ErrorHandler.hpp"
+#include "Token.hpp"
+#include "AST.hpp"
+#include "OwnershipMod.hpp"
+#include "ParseError.hpp"
+#include "SourceLocation.hpp"
+#include "VisMod.hpp"
 #include <expected>
 #include <memory>
 #include <string>
@@ -1620,40 +1620,3 @@ Parser::parse_module_expression(SourceLocation loc) {
   return make_module_expr_node(loc, name->lexeme, std::move(*expr));
 }
 
-std::expected<std::unique_ptr<AST>, ParseError>
-Parser::parse_enum_construction(SourceLocation loc, Token name) {
-  auto val = consume(TokenType::IDENTIFIER);
-  if (!val)
-    return std::unexpected(val.error());
-
-  auto fields = parse_field_assignment(get_loc());
-  if (!fields)
-    return std::unexpected(fields.error());
-
-  return make_enum_const_node(loc, name.lexeme, val->lexeme,
-                              std::move(*fields));
-}
-
-std::expected<std::vector<std::unique_ptr<AST>>, ParseError>
-Parser::parse_field_assignment(SourceLocation loc) {
-  std::vector<std::unique_ptr<AST>> fields;
-  if (auto brace = consume(TokenType::LBRACE); !brace)
-    return fields;
-
-  do {
-    auto field = parse_assignment(get_loc());
-    if (!field)
-      return std::unexpected(field.error());
-    fields.push_back(std::move(*field));
-  } while (!consume(TokenType::COMMA));
-
-  if (auto brace = consume(TokenType::RBRACE); !brace)
-    return std::unexpected(brace.error());
-
-  return fields;
-}
-
-std::expected<std::unique_ptr<AST>, ParseError> Parser::parse_custom_type(SourceLocation loc) {
-  auto module = parse_module_access(loc);
-
-}

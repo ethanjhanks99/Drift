@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tools/SourceLocation.hpp"
+#include "SourceLocation.hpp"
 #include <ostream>
 #include <string>
 

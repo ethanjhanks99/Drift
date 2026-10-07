@@ -1,5 +1,5 @@
 #include "OwnershipMod.hpp"
-#include "lexer/Token.hpp"
+#include "Token.hpp"
 
 OwnershipMod convert_ownership(TokenType type) {
   switch (type) {

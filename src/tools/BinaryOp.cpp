@@ -1,4 +1,4 @@
-#include "tools/BinaryOp.hpp"
+#include "BinaryOp.hpp"
 
 BinaryOp convert_binary(TokenType token) {
   if (token == TokenType::PLUS)

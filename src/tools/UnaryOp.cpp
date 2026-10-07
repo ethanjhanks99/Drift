@@ -1,5 +1,5 @@
 #include "UnaryOp.hpp"
-#include "lexer/Token.hpp"
+#include "Token.hpp"
 
 UnaryOp convert_unary(TokenType token) {
   if (token == TokenType::NOT)

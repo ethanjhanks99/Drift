@@ -1,5 +1,5 @@
 #include "Type.hpp"
-#include "lexer/Token.hpp"
+#include "Token.hpp"
 
 Type convert_type(TokenType type) {
   switch (type) {

@@ -14,7 +14,9 @@ target_sources(${PROJECT}
   PRIVATE ${SOURCE_FILES}
   PUBLIC
     FILE_SET HEADERS
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
     FILES ${HEADER_FILES}
 )
 
-target_include_directories(${PROJECT} PUBLIC ../)
+target_link_libraries(${PROJECT} PUBLIC drift_tools drift_lexer drift_error)
+

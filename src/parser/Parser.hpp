@@ -1,14 +1,14 @@
 #pragma once
 
-#include "lexer/Token.hpp"
-#include "tools/AST.hpp"
-#include "tools/AssignOp.hpp"
-#include "tools/BinaryOp.hpp"
-#include "tools/OwnershipMod.hpp"
-#include "tools/ParseError.hpp"
-#include "tools/SourceLocation.hpp"
-#include "tools/UnaryOp.hpp"
-#include "tools/VisMod.hpp"
+#include "Token.hpp"
+#include "AST.hpp"
+#include "AssignOp.hpp"
+#include "BinaryOp.hpp"
+#include "OwnershipMod.hpp"
+#include "ParseError.hpp"
+#include "SourceLocation.hpp"
+#include "UnaryOp.hpp"
+#include "VisMod.hpp"
 #include <expected>
 #include <memory>
 #include <optional>

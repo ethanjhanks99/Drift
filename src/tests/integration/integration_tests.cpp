@@ -1,5 +1,5 @@
-#include "lexer/Lexer.hpp"
-#include "lexer/Token.hpp"
+#include "Lexer.hpp"
+#include "Token.hpp"
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 

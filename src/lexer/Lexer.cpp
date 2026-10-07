@@ -1,6 +1,6 @@
 #include "Lexer.hpp"
 #include "Token.hpp"
-#include "tools/SourceLocation.hpp"
+#include "SourceLocation.hpp"
 
 Lexer::Lexer(std::string m_source) {
   source = m_source;

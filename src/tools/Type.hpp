@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lexer/Token.hpp"
+#include "Token.hpp"
 
 enum class Type {
   I8,

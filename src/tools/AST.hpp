@@ -1,13 +1,13 @@
 #pragma once
 
-#include "tools/AssignOp.hpp"
-#include "tools/BinaryOp.hpp"
-#include "tools/NodeType.hpp"
-#include "tools/OwnershipMod.hpp"
-#include "tools/SourceLocation.hpp"
-#include "tools/Type.hpp"
-#include "tools/UnaryOp.hpp"
-#include "tools/VisMod.hpp"
+#include "AssignOp.hpp"
+#include "BinaryOp.hpp"
+#include "NodeType.hpp"
+#include "OwnershipMod.hpp"
+#include "SourceLocation.hpp"
+#include "Type.hpp"
+#include "UnaryOp.hpp"
+#include "VisMod.hpp"
 #include <memory>
 #include <string>
 #include <vector>
